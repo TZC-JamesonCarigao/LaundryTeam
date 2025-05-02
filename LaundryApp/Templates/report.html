@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Laundry Data{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-1 animated-content" style="min-height: calc(100vh - 150px);">
+    
+    <div class="row mb-2">
+        <div class="col-md-6 fw-bold text-black-50">
+            <h5>Laundry Data</h5>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb" class="d-inline-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Laundry Data</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="filterToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Filter Applied</strong>
+                <small>Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastBody">
+                Filters have been applied successfully.
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row row-cols-lg-4 row-cols-md-2 row-cols-1 g-3 align-items-end">
+                <!-- Date From -->
+                <div class="col">
+                    <label for="fromDate" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="fromDate">
+                </div>
+                
+                <!-- Date To -->
+                <div class="col">
+                    <label for="toDate" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="toDate">
+                </div>
+                
+                <!-- Customer Filter -->
+                <div class="col">
+                    <label for="customerFilter" class="form-label">Customer</label>
+                    <select class="form-select" id="customerFilter">
+                        <option value="">All Customers</option>
+                    </select>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="col d-flex gap-2">
+                    <button id="applyFilter" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <button id="exportCSV" class="btn btn-success flex-grow-1">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Add this custom search bar -->
+            <div class="row mt-3">
+                <div class="col-md-4 ms-auto">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="customSearchBox" class="form-control" placeholder="Search records...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="card">
+        <div class="card-body table-responsive">
+            <table id="laundryTable" class="table table-hover table-bordered text-center compact" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Batch ID</th>
+                        <th>Time</th>
+                        <th>Duration</th>
+                        <th>Alarms</th>
+                        <th>Machine</th>
+                        <th>Classification</th>
+                        <th>Triggers</th>
+                        <th>Device</th>
+                        <th>ABP Cost</th>
+                        <th>Dosage Cost</th>
+                        <th>Weight</th>
+                        <th>Dosings</th>
+                        <th>pH</th>
+                        <th>Temp Dis</th>
+                        <th>Temp Range</th>
+                        <th>Customer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be loaded via AJAX -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Load customer filter options
+    $.ajax({
+        url: "{% url 'laundry_data_ajax' %}",
+        data: { get_customers: true },
+        success: function(response) {
+            var customerSelect = $('#customerFilter');
+            $.each(response.customers, function(index, customer) {
+                customerSelect.append($('<option>', {
+                    value: customer,
+                    text: customer
+                }));
+            });
+        }
+    });
+
+    // Initialize DataTable
+    var table = $('#laundryTable').DataTable({
+        dom: 'Brtip', // Removed 'f' to hide built-in search box
+        buttons: ['copy', 'csv', 'excel'],
+        processing: true,
+        serverSide: false, // Not using server-side processing
+        ajax: {
+            url: "{% url 'laundry_data_ajax' %}",
+            dataSrc: 'data'
+        },
+        columns: [
+            { data: "id" },
+            { data: "batchid" },
+            { data: "time" },
+            { data: "duration" },
+            { data: "alarms" },
+            { data: "machine" },
+            { data: "classification" },
+            { data: "triggers" },
+            { data: "device" },
+            { data: "abpcost" },
+            { data: "dosagecost" },
+            { data: "weight" },
+            { data: "dosings" },
+            { data: "ph" },
+            { data: "tempdis" },
+            { data: "temprange" },
+            { data: "customer" }
+        ],
+        order: [[0, 'desc']],
+        pageLength: 15,
+        // Add this custom search function
+        search: {
+            smart: false, // Disable DataTables' smart search
+            regex: true   // Enable regex search
+        }
+    });
+    
+    // Handle filter button click
+    $('#applyFilter').click(function() {
+        var fromDate = $('#fromDate').val();
+        var toDate = $('#toDate').val();
+        var customer = $('#customerFilter').val();
+        
+        // Reload table with filters
+        table.ajax.url("{% url 'laundry_data_ajax' %}?" + 
+            "fromDate=" + fromDate + 
+            "&toDate=" + toDate + 
+            "&customer=" + customer).load();
+        
+        // Show toast notification
+        var filterMessage = "Filters applied: ";
+        if (fromDate) filterMessage += "From: " + fromDate + " ";
+        if (toDate) filterMessage += "To: " + toDate + " ";
+        if (customer) filterMessage += "Customer: " + customer;
+        
+        $('#toastBody').text(filterMessage);
+        var toast = new bootstrap.Toast(document.getElementById('filterToast'));
+        toast.show();
+    });
+    
+    // Handle CSV export button click
+    $('#exportCSV').click(function() {
+        // Show loading indicator
+        showLoading();
+        
+        // Request ALL data without any filters
+        $.ajax({
+            url: "{% url 'laundry_data_ajax' %}?export=true",
+            type: "GET",
+            data: {
+                get_all: true // Signal we want all records
+            },
+            success: function(response) {
+                if (!response.data || response.data.length === 0) {
+                    alert("No data available to export");
+                    hideLoading();
+                    return;
+                }
+                
+                // Sort data by ID in ascending order
+                var sortedData = response.data.sort(function(a, b) {
+                    return parseInt(a.id) - parseInt(b.id);
+                });
+                
+                // CSV header row with styling (same as visible table)
+                var csvContent = "ID,Batch ID,Time,Duration,Alarms,Machine,Classification,Triggers,Device,ABP Cost,Dosage Cost,Weight,Dosings,pH,Temp Dis,Temp Range,Customer\r\n";
+                
+                // Add data rows
+                sortedData.forEach(function(row) {
+                    csvContent += [
+                        row.id,
+                        row.batchid,
+                        row.time,
+                        row.duration,
+                        row.alarms,
+                        row.machine,
+                        row.classification,
+                        row.triggers,
+                        row.device,
+                        row.abpcost,
+                        row.dosagecost,
+                        row.weight,
+                        row.dosings,
+                        row.ph,
+                        row.tempdis,
+                        row.temprange,
+                        row.customer
+                    ].map(value => {
+                        // Handle values that might contain commas or quotes
+                        value = value !== null && value !== undefined ? String(value) : "";
+                        return value.includes(',') || value.includes('"') ? '"' + value.replace(/"/g, '""') + '"' : value;
+                    }).join(',') + "\r\n";
+                });
+                
+                // Create and trigger download
+                var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement("a");
+                var url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "LaundryData.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                hideLoading();
+            },
+            error: function(xhr, status, error) {
+                console.error("Error exporting CSV:", error);
+                alert("Error exporting data: " + error);
+                hideLoading();
+            }
+        });
+    });
+    
+    // Enhanced search functionality with consecutive character highlighting
+    $('#customSearchBox').on('keyup', function() {
+        var searchText = $(this).val();
+        
+        // Clear any existing highlights first
+        $('#laundryTable tbody td').each(function() {
+            var originalText = $(this).data('original-text');
+            if (originalText) {
+                $(this).html(originalText);
+            } else {
+                $(this).data('original-text', $(this).html());
+            }
+        });
+        
+        // If search is empty, just redraw the table with original values
+        if (!searchText.trim()) {
+            table.search('').draw();
+            return;
+        }
+        
+        // Create a pattern that matches consecutive characters (not allowing chars between)
+        // First escape any regex special characters
+        var escapedText = searchText.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        
+        // Split by spaces to handle multiple words
+        var terms = escapedText.split(' ')
+                            .filter(function(term) { return term.length > 0; });
+        
+        // Join terms with alternation (|) for OR matching
+        var pattern = terms.join('|');
+        
+        // Apply the search - use simple string search, not regex
+        table.search(pattern).draw();
+        
+        // After the table is redrawn, apply highlighting
+        if (searchText.trim()) {
+            $('#laundryTable tbody td').each(function() {
+                var cell = $(this);
+                var cellText = cell.text();
+                
+                // Store original text if not already stored
+                if (!cell.data('original-text')) {
+                    cell.data('original-text', cell.html());
+                }
+                
+                // Check if any of the search terms appear in the cell
+                var highlighted = cellText;
+                var matched = false;
+                
+                terms.forEach(function(term) {
+                    // Case insensitive search
+                    var regex = new RegExp('(' + term + ')', 'gi');
+                    
+                    // Check if there's a match before replacing
+                    if (regex.test(cellText)) {
+                        matched = true;
+                        // Reset regex because .test() advances the regex lastIndex
+                        regex = new RegExp('(' + term + ')', 'gi');
+                        // Apply highlighting by wrapping matches in span
+                        highlighted = highlighted.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>');
+                    }
+                });
+                
+                // Replace cell content if there's a match
+                if (matched) {
+                    cell.html(highlighted);
+                }
+            });
+        }
+    });
+});
+</script>
+
+<style>
+/* Sticky header */
+#laundryTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: black;
+    color: white;
+    font-weight: bold;
+}
+
+/* Card body containing the table */
+.card-body {
+    overflow: hidden; /* Hide anything that overflows the card body */
+    padding: 1.25 rem; /* Ensure consistent padding */
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: block;
+  white-space: nowrap;
+}
+
+#laundryTable {
+  width: max-content;     /* Let table grow beyond screen */
+  min-width: 100%;        /* Ensure it doesn't shrink */
+  table-layout: auto;
+}
+
+#laundryTable_wrapper {
+    overflow-x: hidden;
+    overflow-x: auto;
+}
+
+/* Table cell styling */
+#laundryTable td, #laundryTable th {
+    white-space: nowrap;
+    padding: 8px 12px;
+    text-align: center;
+}
+
+/* Optional: add shadow for sticky header */
+#laundryTable thead th {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+</style>
+{% endblock %}
