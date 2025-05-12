@@ -1,0 +1,796 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Laundry Data{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>WiFi Schedule Configuration</h1>
+    
+    <div class="panel">
+        <div class="panel-header">Schedule Configuration</div>
+        <div class="panel-bodyv2">
+            <!-- Primary WiFi -->
+            <div class="form-group primary-wifi-container">
+                <label for="primary-wifi">Primary WiFi:</label>
+                <select id="primary-wifi" class="form-control">
+                    <option value="" disabled selected hidden>Select Primary WiFi</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- Secondary WiFi -->
+            <div class="form-group secondary-wifi-container">
+                <label for="secondary-wifi">Secondary WiFi:</label>
+                <select id="secondary-wifi" class="form-control">
+                    <option value="" disabled selected hidden>Select Secondary WiFi</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- Switch Time -->
+            <div class="form-group switch-time-container">
+                <label for="switch-time">Switch Time:</label>
+                <input type="time" id="switch-time" class="form-control time-input" value="13:00">
+                <small id="switch-time-help" class="form-text text-muted"></small>
+            </div>
+            
+            <!-- Revert Time -->
+            <div class="form-group revert-time-container">
+                <label for="revert-time">Revert Time:</label>
+                <input type="time" id="revert-time" class="form-control time-input" value="13:02">
+                <small id="revert-time-help" class="form-text text-muted"></small>
+            </div>
+            
+            <!-- Start Button and Switching Duration -->
+            <div class="schedule-controls">
+                <button class="btn start-btn" id="start-schedule-btn">Start Schedule</button>
+                <div id="switching-duration" class="switching-duration"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <div class="panel-header">Connection Status</div>
+        <div class="panel-body">
+            <div class="status">
+                <strong>Connected to:</strong> 
+                {% if current_ssid %}{{ current_ssid }}{% else %}Not connected{% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <div class="panel-header">Activity Log</div>
+        <div class="panel-bodyv2">
+            <div class="log">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp }}</td>
+                            <td>{{ log.message }}</td>
+                            <td>
+                                {% if log.is_success %}
+                                    <span class="badge badge-success">Success</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Error</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align: center;">System initialized... Ready for configuration.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Panel styling remains the same */
+    .panel {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .panel-header {
+        background-color: #f8f9fa;
+        padding: 12px 15px;
+        border-bottom: 1px solid #ddd;
+        font-weight: 600;
+    }
+    .panel-body {
+        padding: 15px;
+        position: relative; /* Added for absolute positioning context */
+        height: 75px; /* Set a fixed height for the panel body */
+    }
+
+    .panel-bodyv2 {
+        padding: 15px;
+        position: relative; /* Added for absolute positioning context */
+        height: 230px; /* Set a fixed height for the panel body */
+    }
+    
+    /* Manual positioning for form elements */
+    .primary-wifi-container {
+        position: absolute;
+        top: 20px;
+        left: 40px;
+        width: 420px;
+    }
+    
+    .secondary-wifi-container {
+        position: absolute;
+        top: 70px;
+        left: 40px;
+        width: 420px;
+    }
+    
+    .switch-time-container {
+        position: absolute;
+        top: 20px;
+        left: 500px;
+        width: 250px;
+    }
+    
+    .revert-time-container {
+        position: absolute;
+        top: 70px;
+        left: 500px;
+        width: 250px;
+    }
+    
+    .start-btn {
+        position: absolute;
+        left: 40px;
+        top: 130px;
+        width: 300px;
+        height: 50px;
+    }
+    
+    .switching-duration {
+        position: absolute;
+        top: 130px;
+        left: 430px;
+        min-width: 200px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        color: #28a745;
+        font-weight: 500;
+    }
+    
+    .form-group {
+        display: flex;
+        margin-bottom: 15px;
+        align-items: center;
+    }
+    
+    .form-group label {
+        width: 150px;
+        font-weight: 500;
+        margin-right: 10px;
+    }
+    
+    .form-control {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+    }
+    
+    .time-input {
+        width: 120px;
+    }
+    
+    .btn {
+        padding: 2px 2px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 400;
+        width: 350px;
+    }
+    
+    .btn:hover {
+        background-color: #0069d9;
+    }
+    
+    /* Updated styles for status and log */
+    .status {
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+    
+    .log {
+        height: 200px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: monospace;
+        background-color: #f8f9fa;
+        overflow-y: auto;
+    }
+
+    /* Enhanced styles for the activity log table */
+    .log-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    
+    .log-table th, .log-table td {
+        padding: 12px 15px;
+        text-align: left;
+    }
+    
+    .log-table th {
+        background-color: #3a7bd5;
+        color: white;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+    
+    .log-table tr {
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.3s ease;
+    }
+    
+    .log-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    .log-table tr:hover {
+        background-color: #f0f7ff;
+    }
+
+    .log-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-block;
+        text-align: center;
+        letter-spacing: 0.5px;
+        min-width: 80px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    
+    .badge-success {
+        background-color: #00c853;
+    }
+    
+    .badge-danger {
+        background-color: #ff3d00;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Declare all DOM elements once at the beginning
+        const primaryDropdown = document.getElementById('primary-wifi');
+        const secondaryDropdown = document.getElementById('secondary-wifi');
+        const switchTimeInput = document.getElementById('switch-time');
+        const revertTimeInput = document.getElementById('revert-time');
+        const switchingDuration = document.getElementById('switching-duration');
+        const startButton = document.getElementById('start-schedule-btn');
+        const statusDiv = document.querySelector('.status');
+        
+        // Schedule state variables
+        let scheduleRunning = false;
+        let scheduleTimer = null;
+        let lastAction = null;
+
+        // Function to fetch available saved networks from the computer
+        async function fetchSavedNetworks() {
+            try {
+                // Loading state in status div
+                if (statusDiv) {
+                    statusDiv.innerHTML = '<strong>Connection Status:</strong> <span style="color: #007bff;">Fetching network information...</span>';
+                }
+                
+                // Fetch actual saved networks from our API endpoint
+                const response = await fetch('/api/saved-networks/');
+                
+                // Check if the fetch was successful
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Check if we got a networks array or an object with a networks property
+                let networks = Array.isArray(data) ? data : (data.networks || []);
+                
+                // For debugging - log if we received debug_info
+                if (data.debug_info) {
+                    console.log("Debug info from network detection:", data.debug_info);
+                }
+                
+                // Update status with success or error message
+                if (statusDiv) {
+                    if (networks.length === 0) {
+                        statusDiv.innerHTML = '<strong>Connection Status:</strong> <span style="color: #ff7700;">No networks detected. Check WiFi adapter.</span>';
+                    } else {
+                        const currentNetwork = networks.find(network => network.isConnected);
+                        if (currentNetwork) {
+                            statusDiv.innerHTML = `<strong>Connected to:</strong> ${currentNetwork.ssid}`;
+                        } else {
+                            statusDiv.innerHTML = '<strong>Connected to:</strong> Not connected to any known network';
+                        }
+                    }
+                }
+                
+                return networks;
+            } catch (error) {
+                console.error('Error fetching saved networks:', error);
+                
+                // Display error in status
+                if (statusDiv) {
+                    statusDiv.innerHTML = `<strong>Connection Status:</strong> <span style="color: #ff3d00;">Error: ${error.message}</span>`;
+                }
+                
+                // Return empty array to prevent further errors
+                return [];
+            }
+        }
+
+        // Function to populate dropdowns
+        async function populateWifiDropdowns() {
+            // Show loading indicator
+            primaryDropdown.innerHTML = '<option value="" disabled selected>Loading networks...</option>';
+            secondaryDropdown.innerHTML = '<option value="" disabled selected>Loading networks...</option>';
+            
+            // Fetch actual networks from the computer
+            let networks = await fetchSavedNetworks();
+            
+            // Filter to only include saved AND available networks
+            networks = networks.filter(network => network.isSaved && network.isAvailable);
+            
+            // Clear loading message
+            primaryDropdown.innerHTML = '<option value="" disabled hidden>Select Primary WiFi</option>';
+            secondaryDropdown.innerHTML = '<option value="" disabled hidden>Select Secondary WiFi</option>';
+            
+            if (!networks || networks.length === 0) {
+                console.warn('No saved and available networks found');
+                primaryDropdown.innerHTML = '<option value="" disabled selected>No saved networks available</option>';
+                secondaryDropdown.innerHTML = '<option value="" disabled selected>No saved networks available</option>';
+                return;
+            }
+            
+            // Get current network if available
+            const currentNetwork = networks.find(network => network.isConnected);
+            
+            // Sort networks to put the connected network first
+            networks.sort((a, b) => {
+                if (a.isConnected) return -1;
+                if (b.isConnected) return 1;
+                return a.ssid.localeCompare(b.ssid);
+            });
+            
+            // Populate primary dropdown
+            networks.forEach(network => {
+                const option = document.createElement('option');
+                option.value = network.ssid;
+                option.textContent = network.ssid;
+                
+                // Set current network as selected by default
+                if (network.isConnected) {
+                    option.selected = true;
+                }
+                
+                primaryDropdown.appendChild(option);
+            });
+            
+            // Initially populate secondary dropdown (excluding the currently selected primary)
+            updateSecondaryDropdown();
+            
+            // Add event listener to update secondary dropdown when primary selection changes
+            primaryDropdown.addEventListener('change', updateSecondaryDropdown);
+            
+            function updateSecondaryDropdown() {
+                const selectedPrimary = primaryDropdown.value;
+                
+                // Clear existing options except the first one
+                secondaryDropdown.innerHTML = '<option value="" disabled selected hidden>Select Secondary WiFi</option>';
+                
+                // Populate secondary dropdown excluding the selected primary network
+                networks.forEach(network => {
+                    if (network.ssid !== selectedPrimary) {
+                        const option = document.createElement('option');
+                        option.value = network.ssid;
+                        option.textContent = network.ssid;
+                        secondaryDropdown.appendChild(option);
+                    }
+                });
+            }
+        }
+        
+        // Time handling functions
+        function updateScheduleInfo() {
+            const switchTime = switchTimeInput.value;
+            const revertTime = revertTimeInput.value;
+            
+            if (!switchTime || !revertTime) {
+                switchingDuration.textContent = "";
+                return;
+            }
+            
+            // Always enable the button
+            startButton.disabled = false;
+            
+            // Calculate time difference
+            const switchMinutes = convertTimeToMinutes(switchTime);
+            let revertMinutes = convertTimeToMinutes(revertTime);
+            
+            // Handle cases where revert time is earlier in the day than switch time
+            // by assuming it's the next day
+            if (revertMinutes < switchMinutes) {
+                revertMinutes += 24 * 60; // Add 24 hours worth of minutes
+            }
+            
+            // Calculate duration from switch time to revert time
+            const diffMinutes = revertMinutes - switchMinutes;
+            
+            // Display both start time and duration
+            const formattedTime = formatTimeDisplay(switchTime);
+            switchingDuration.textContent = `Starting at ${formattedTime} • Duration: ${formatTimeDiff(diffMinutes)}`;
+            
+            // Clear any previous border styling
+            revertTimeInput.style.borderColor = "#ddd";
+            switchTimeInput.style.borderColor = "#ddd";
+        }
+        
+        function convertTimeToMinutes(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function formatTimeDisplay(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+            return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+        
+        function formatTimeDiff(minutes) {
+            if (minutes < 60) {
+                return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const remainingMinutes = minutes % 60;
+                if (remainingMinutes === 0) {
+                    return `${hours} hour${hours !== 1 ? 's' : ''}`;
+                } else {
+                    return `${hours} hour${hours !== 1 ? 's' : ''} and ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
+                }
+            }
+        }
+        
+        // Schedule management functions
+        function toggleSchedule() {
+            if (scheduleRunning) {
+                stopSchedule();
+            } else {
+                startSchedule();
+            }
+        }
+        
+        function startSchedule() {
+            // Validate inputs
+            if (!primaryDropdown.value || !secondaryDropdown.value || !switchTimeInput.value || !revertTimeInput.value) {
+                alert('Please select both networks and set switch and revert times.');
+                return;
+            }
+            
+            // Update UI to show schedule is running
+            scheduleRunning = true;
+            startButton.textContent = 'Schedule Running';
+            startButton.classList.add('active-schedule');
+            
+            // Disable form fields
+            primaryDropdown.disabled = true;
+            secondaryDropdown.disabled = true;
+            switchTimeInput.disabled = true;
+            revertTimeInput.disabled = true;
+            
+            // Store schedule details
+            const schedule = {
+                primaryWifi: primaryDropdown.value,
+                secondaryWifi: secondaryDropdown.value,
+                switchTime: switchTimeInput.value,
+                revertTime: revertTimeInput.value
+            };
+            
+            // Add to activity log
+            addLogEntry(`Schedule started. Will switch between ${schedule.primaryWifi} and ${schedule.secondaryWifi}`, true);
+            
+            // Start the schedule checker
+            checkAndSwitchNetworks(schedule);
+            // Check every 30 seconds
+            scheduleTimer = setInterval(() => checkAndSwitchNetworks(schedule), 30000);
+        }
+        
+        function stopSchedule() {
+            // Update UI
+            scheduleRunning = false;
+            startButton.textContent = 'Start Schedule';
+            startButton.classList.remove('active-schedule');
+            
+            // Enable form fields
+            primaryDropdown.disabled = false;
+            secondaryDropdown.disabled = false;
+            switchTimeInput.disabled = false;
+            revertTimeInput.disabled = false;
+            
+            // Stop timer
+            if (scheduleTimer) {
+                clearInterval(scheduleTimer);
+                scheduleTimer = null;
+            }
+            
+            // Add to activity log
+            addLogEntry('Schedule stopped.', true);
+        }
+        
+        function checkAndSwitchNetworks(schedule) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+            
+            // Get schedule times
+            const switchTime = schedule.switchTime;
+            const revertTime = schedule.revertTime;
+            
+            // Convert all times to minutes since midnight for easier comparison
+            const currentMinutes = convertTimeToMinutes(currentTimeStr);
+            const switchMinutes = convertTimeToMinutes(switchTime);
+            let revertMinutes = convertTimeToMinutes(revertTime);
+            
+            // Adjust if revert time is on the next day
+            if (revertMinutes < switchMinutes) {
+                revertMinutes += 24 * 60; // Add 24 hours
+            }
+            
+            // Determine if we're in the switching window
+            let shouldUseSecondary = false;
+            
+            if (revertMinutes > switchMinutes) {
+                // Standard case - switch and revert times on same day
+                shouldUseSecondary = currentMinutes >= switchMinutes && currentMinutes < revertMinutes;
+            } else {
+                // Edge case - revert time is on the next day
+                shouldUseSecondary = currentMinutes >= switchMinutes || currentMinutes < revertMinutes;
+            }
+            
+            // Check if we need to change network
+            const previousAction = lastAction;
+            lastAction = shouldUseSecondary ? 'secondary' : 'primary';
+            
+            // Only switch if we need to (different from last state)
+            if (previousAction !== lastAction) {
+                if (shouldUseSecondary) {
+                    switchToNetwork(schedule.secondaryWifi, true);
+                } else {
+                    switchToNetwork(schedule.primaryWifi, false);
+                }
+            }
+        }
+        
+        // Network and data operations
+        function switchToNetwork(ssid, isSecondary) {
+            // Check if we're already on this network
+            const currentNetwork = statusDiv.textContent.includes(ssid);
+            if (currentNetwork) {
+                console.log(`Already connected to ${ssid}`);
+                return;
+            }
+            
+            addLogEntry(`Switching to ${ssid}...`, true);
+            
+            // Call API to switch network
+            fetch('/api/switch-network/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    ssid: ssid,
+                    isSecondary: isSecondary
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addLogEntry(`Successfully switched to ${ssid}`, true);
+                    
+                    // Update status display
+                    if (statusDiv) {
+                        statusDiv.innerHTML = `<strong>Connected to:</strong> ${ssid}`;
+                    }
+                    
+                    // If this is secondary network, import Excel data
+                    if (isSecondary) {
+                        importExcelData();
+                    }
+                } else {
+                    addLogEntry(`Failed to switch to ${ssid}: ${data.error || 'Unknown error'}`, false);
+                }
+            })
+            .catch(error => {
+                addLogEntry(`Error switching network: ${error.message}`, false);
+            });
+        }
+        
+        function importExcelData() {
+            addLogEntry("Starting Excel data import...", true);
+            
+            fetch('/api/import-excel-data/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addLogEntry(`Excel data import successful: ${data.message}`, true);
+                } else {
+                    addLogEntry(`Failed to import Excel data: ${data.error || 'Unknown error'}`, false);
+                }
+            })
+            .catch(error => {
+                addLogEntry(`Error importing Excel data: ${error.message}`, false);
+            });
+        }
+        
+        // Helper functions
+        function getCsrfToken() {
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        function addLogEntry(message, isSuccess) {
+            const logTable = document.querySelector('.log-table tbody');
+            if (!logTable) return;
+            
+            // Create new row
+            const row = document.createElement('tr');
+            
+            // Add timestamp cell
+            const timeCell = document.createElement('td');
+            const now = new Date();
+            timeCell.textContent = now.toLocaleTimeString();
+            row.appendChild(timeCell);
+            
+            // Add message cell
+            const messageCell = document.createElement('td');
+            messageCell.textContent = message;
+            row.appendChild(messageCell);
+            
+            // Add status cell with badge
+            const statusCell = document.createElement('td');
+            const badge = document.createElement('span');
+            badge.classList.add('badge');
+            badge.classList.add(isSuccess ? 'badge-success' : 'badge-danger');
+            badge.textContent = isSuccess ? 'Success' : 'Error';
+            statusCell.appendChild(badge);
+            row.appendChild(statusCell);
+            
+            // Insert row at the beginning of the table
+            if (logTable.firstChild) {
+                logTable.insertBefore(row, logTable.firstChild);
+            } else {
+                logTable.appendChild(row);
+            }
+            
+            // Remove empty message row if it exists
+            const emptyRow = logTable.querySelector('tr td[colspan="3"]');
+            if (emptyRow) {
+                emptyRow.parentElement.remove();
+            }
+            
+            // Limit number of log entries (keep last 50)
+            const rows = logTable.querySelectorAll('tr');
+            if (rows.length > 50) {
+                logTable.removeChild(rows[rows.length - 1]);
+            }
+        }
+        
+        // Add CSS for active schedule button
+        const style = document.createElement('style');
+        style.textContent = `
+            .active-schedule {
+                background-color: #dc3545 !important; 
+                animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize event listeners
+        switchTimeInput.addEventListener('change', updateScheduleInfo);
+        revertTimeInput.addEventListener('change', updateScheduleInfo);
+        startButton.addEventListener('click', toggleSchedule);
+        
+        // Initialize the page
+        populateWifiDropdowns();
+        updateScheduleInfo();
+    });
+</script>
+
+<script>
+    // Prevent errors from scripts.js if it tries to access elements that don't exist in this page
+    window.addEventListener('DOMContentLoaded', function() {
+        // Create dummy objects for any elements that might be accessed by scripts.js
+        // This prevents "Cannot read property of null" errors
+        if (typeof window.dummyNodesCreated === 'undefined') {
+            window.dummyNodesCreated = true;
+            
+            // Common elements that might be accessed in scripts.js
+            const dummyDiv = document.createElement('div');
+            dummyDiv.style.display = 'none';
+            
+            // Create a dummy element with addEventListener that does nothing
+            dummyDiv.addEventListener = function() {};
+            
+            // Override getElementById to return our dummy for missing elements
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                const element = originalGetElementById.call(document, id);
+                if (!element) {
+                    console.log(`Warning: Element with id '${id}' not found, using dummy element`);
+                    return dummyDiv;
+                }
+                return element;
+            };
+        }
+    });
+</script>
+{% endblock %}
