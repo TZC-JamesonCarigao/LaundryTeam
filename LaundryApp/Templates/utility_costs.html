@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Utility Costs{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-1 animated-content" style="min-height: calc(100vh - 150px);">
+    
+    <div class="row mb-2">
+        <div class="col-md-6 fw-bold text-black-50">
+            <h5>UTILITY COSTS</h5>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb" class="d-inline-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Utility Costs</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.electricity_cost.label_tag }}
+                            {{ form.electricity_cost }}
+                            {% if form.electricity_cost.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.electricity_cost.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.gas_cost.label_tag }}
+                            {{ form.gas_cost }}
+                            {% if form.gas_cost.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.gas_cost.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.water_cost.label_tag }}
+                            {{ form.water_cost }}
+                            {% if form.water_cost.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.water_cost.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Costs
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if latest_costs %}
+    <div class="card">
+        <div class="card-header">
+            <h6>Current Utility Costs</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Electricity Cost</th>
+                            <th>Gas Cost</th>
+                            <th>Water Cost</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${{ latest_costs.electricity_cost }}</td>
+                            <td>${{ latest_costs.gas_cost }}</td>
+                            <td>${{ latest_costs.water_cost }}</td>
+                            <td>{{ latest_costs.updated_at }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.875em;
+    }
+</style>
+{% endblock %}

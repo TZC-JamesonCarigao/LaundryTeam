@@ -5,6 +5,19 @@
 
 {% block content %}
 <div class="container">
+    <div class="row mb-2">
+        <div class="col-md-6 fw-bold text-black-50">
+            <h5>SETTINGS</h5>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb" class="d-inline-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Settings</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
     <h1>WiFi Schedule Configuration</h1>
     
     <div class="panel">
@@ -308,6 +321,53 @@
         let scheduleTimer = null;
         let lastAction = null;
 
+        // Load saved settings from localStorage
+        function loadSavedSettings() {
+            // Load switch time
+            const savedSwitchTime = localStorage.getItem('laundry_app_switch_time');
+            if (savedSwitchTime) {
+                switchTimeInput.value = savedSwitchTime;
+            }
+            
+            // Load revert time
+            const savedRevertTime = localStorage.getItem('laundry_app_revert_time');
+            if (savedRevertTime) {
+                revertTimeInput.value = savedRevertTime;
+            }
+            
+            // Load schedule running status
+            const savedScheduleRunning = localStorage.getItem('laundry_app_schedule_running') === 'true';
+            scheduleRunning = savedScheduleRunning;
+            
+            // When networks are loaded, we'll restore primary and secondary selections
+            const savedPrimaryNetwork = localStorage.getItem('laundry_app_primary_network');
+            const savedSecondaryNetwork = localStorage.getItem('laundry_app_secondary_network');
+            
+            // Return saved network selections for use when networks are loaded
+            return {
+                primaryNetwork: savedPrimaryNetwork,
+                secondaryNetwork: savedSecondaryNetwork
+            };
+        }
+        
+        // Save settings to localStorage whenever they change
+        function saveSettings() {
+            // Save times
+            localStorage.setItem('laundry_app_switch_time', switchTimeInput.value);
+            localStorage.setItem('laundry_app_revert_time', revertTimeInput.value);
+            
+            // Save networks
+            if (primaryDropdown.value) {
+                localStorage.setItem('laundry_app_primary_network', primaryDropdown.value);
+            }
+            if (secondaryDropdown.value) {
+                localStorage.setItem('laundry_app_secondary_network', secondaryDropdown.value);
+            }
+            
+            // Save schedule state
+            localStorage.setItem('laundry_app_schedule_running', scheduleRunning.toString());
+        }
+
         // Function to fetch available saved networks from the computer
         async function fetchSavedNetworks() {
             try {
@@ -368,6 +428,9 @@
             primaryDropdown.innerHTML = '<option value="" disabled selected>Loading networks...</option>';
             secondaryDropdown.innerHTML = '<option value="" disabled selected>Loading networks...</option>';
             
+            // Load saved settings
+            const savedSettings = loadSavedSettings();
+            
             // Fetch actual networks from the computer
             let networks = await fetchSavedNetworks();
             
@@ -401,8 +464,12 @@
                 option.value = network.ssid;
                 option.textContent = network.ssid;
                 
-                // Set current network as selected by default
-                if (network.isConnected) {
+                // Set saved network as selected
+                if (network.ssid === savedSettings.primaryNetwork) {
+                    option.selected = true;
+                }
+                // If no saved selection, use current network
+                else if (!savedSettings.primaryNetwork && network.isConnected) {
                     option.selected = true;
                 }
                 
@@ -410,12 +477,15 @@
             });
             
             // Initially populate secondary dropdown (excluding the currently selected primary)
-            updateSecondaryDropdown();
+            updateSecondaryDropdown(savedSettings.secondaryNetwork);
             
             // Add event listener to update secondary dropdown when primary selection changes
-            primaryDropdown.addEventListener('change', updateSecondaryDropdown);
+            primaryDropdown.addEventListener('change', function() {
+                updateSecondaryDropdown();
+                saveSettings(); // Save when selection changes
+            });
             
-            function updateSecondaryDropdown() {
+            function updateSecondaryDropdown(selectedSecondaryNetwork = null) {
                 const selectedPrimary = primaryDropdown.value;
                 
                 // Clear existing options except the first one
@@ -427,10 +497,27 @@
                         const option = document.createElement('option');
                         option.value = network.ssid;
                         option.textContent = network.ssid;
+                        
+                        // Select the saved secondary network if it exists
+                        if (network.ssid === selectedSecondaryNetwork) {
+                            option.selected = true;
+                        }
+                        
                         secondaryDropdown.appendChild(option);
                     }
                 });
+                
+                // Add change listener to the secondary dropdown
+                secondaryDropdown.addEventListener('change', saveSettings);
             }
+            
+            // If schedule was running before, restart it
+            if (scheduleRunning) {
+                startSchedule();
+            }
+            
+            // Update the schedule info display
+            updateScheduleInfo();
         }
         
         // Time handling functions
@@ -466,6 +553,9 @@
             // Clear any previous border styling
             revertTimeInput.style.borderColor = "#ddd";
             switchTimeInput.style.borderColor = "#ddd";
+            
+            // Save settings when times change
+            saveSettings();
         }
         
         function convertTimeToMinutes(timeString) {
@@ -503,23 +593,13 @@
             }
         }
         
+        // Function to start the schedule with server-side persistence
         function startSchedule() {
             // Validate inputs
             if (!primaryDropdown.value || !secondaryDropdown.value || !switchTimeInput.value || !revertTimeInput.value) {
                 alert('Please select both networks and set switch and revert times.');
                 return;
             }
-            
-            // Update UI to show schedule is running
-            scheduleRunning = true;
-            startButton.textContent = 'Schedule Running';
-            startButton.classList.add('active-schedule');
-            
-            // Disable form fields
-            primaryDropdown.disabled = true;
-            secondaryDropdown.disabled = true;
-            switchTimeInput.disabled = true;
-            revertTimeInput.disabled = true;
             
             // Store schedule details
             const schedule = {
@@ -529,132 +609,49 @@
                 revertTime: revertTimeInput.value
             };
             
-            // Add to activity log
-            addLogEntry(`Schedule started. Will switch between ${schedule.primaryWifi} and ${schedule.secondaryWifi}`, true);
-            
-            // Start the schedule checker
-            checkAndSwitchNetworks(schedule);
-            // Check every 30 seconds
-            scheduleTimer = setInterval(() => checkAndSwitchNetworks(schedule), 30000);
-        }
-        
-        function stopSchedule() {
-            // Update UI
-            scheduleRunning = false;
-            startButton.textContent = 'Start Schedule';
-            startButton.classList.remove('active-schedule');
-            
-            // Enable form fields
-            primaryDropdown.disabled = false;
-            secondaryDropdown.disabled = false;
-            switchTimeInput.disabled = false;
-            revertTimeInput.disabled = false;
-            
-            // Stop timer
-            if (scheduleTimer) {
-                clearInterval(scheduleTimer);
-                scheduleTimer = null;
-            }
-            
-            // Add to activity log
-            addLogEntry('Schedule stopped.', true);
-        }
-        
-        function checkAndSwitchNetworks(schedule) {
-            const now = new Date();
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-            const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-            
-            // Get schedule times
-            const switchTime = schedule.switchTime;
-            const revertTime = schedule.revertTime;
-            
-            // Convert all times to minutes since midnight for easier comparison
-            const currentMinutes = convertTimeToMinutes(currentTimeStr);
-            const switchMinutes = convertTimeToMinutes(switchTime);
-            let revertMinutes = convertTimeToMinutes(revertTime);
-            
-            // Adjust if revert time is on the next day
-            if (revertMinutes < switchMinutes) {
-                revertMinutes += 24 * 60; // Add 24 hours
-            }
-            
-            // Determine if we're in the switching window
-            let shouldUseSecondary = false;
-            
-            if (revertMinutes > switchMinutes) {
-                // Standard case - switch and revert times on same day
-                shouldUseSecondary = currentMinutes >= switchMinutes && currentMinutes < revertMinutes;
-            } else {
-                // Edge case - revert time is on the next day
-                shouldUseSecondary = currentMinutes >= switchMinutes || currentMinutes < revertMinutes;
-            }
-            
-            // Check if we need to change network
-            const previousAction = lastAction;
-            lastAction = shouldUseSecondary ? 'secondary' : 'primary';
-            
-            // Only switch if we need to (different from last state)
-            if (previousAction !== lastAction) {
-                if (shouldUseSecondary) {
-                    switchToNetwork(schedule.secondaryWifi, true);
-                } else {
-                    switchToNetwork(schedule.primaryWifi, false);
-                }
-            }
-        }
-        
-        // Network and data operations
-        function switchToNetwork(ssid, isSecondary) {
-            // Check if we're already on this network
-            const currentNetwork = statusDiv.textContent.includes(ssid);
-            if (currentNetwork) {
-                console.log(`Already connected to ${ssid}`);
-                return;
-            }
-            
-            addLogEntry(`Switching to ${ssid}...`, true);
-            
-            // Call API to switch network
-            fetch('/api/switch-network/', {
+            // Call API to start the schedule on the server with persistence flag
+            fetch('/api/start-schedule/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCsrfToken()
                 },
                 body: JSON.stringify({
-                    ssid: ssid,
-                    isSecondary: isSecondary
+                    ...schedule,
+                    persist: true  // Add flag to persist schedule beyond user session
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLogEntry(`Successfully switched to ${ssid}`, true);
+                    // Update UI to show schedule is running
+                    scheduleRunning = true;
+                    startButton.textContent = 'Stop Schedule';
+                    startButton.classList.add('active-schedule');
                     
-                    // Update status display
-                    if (statusDiv) {
-                        statusDiv.innerHTML = `<strong>Connected to:</strong> ${ssid}`;
-                    }
+                    // Disable form fields
+                    primaryDropdown.disabled = true;
+                    secondaryDropdown.disabled = true;
+                    switchTimeInput.disabled = true;
+                    revertTimeInput.disabled = true;
                     
-                    // If this is secondary network, import Excel data
-                    if (isSecondary) {
-                        importExcelData();
-                    }
+                    // Add to activity log
+                    addLogEntry(`Schedule started on server. Will switch between ${schedule.primaryWifi} and ${schedule.secondaryWifi}`, true);
+                    
+                    // Save state to localStorage
+                    saveSettings();
                 } else {
-                    addLogEntry(`Failed to switch to ${ssid}: ${data.error || 'Unknown error'}`, false);
+                    addLogEntry(`Failed to start schedule: ${data.error || 'Unknown error'}`, false);
                 }
             })
             .catch(error => {
-                addLogEntry(`Error switching network: ${error.message}`, false);
+                addLogEntry(`Error starting schedule: ${error.message}`, false);
             });
         }
         
-        function importExcelData() {
-            addLogEntry("Starting Excel data import...", true);
-            
-            fetch('/api/import-excel-data/', {
+        function stopSchedule() {
+            // Call API to stop the schedule on the server
+            fetch('/api/stop-schedule/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -665,102 +662,180 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLogEntry(`Excel data import successful: ${data.message}`, true);
+                    // Update UI
+                    scheduleRunning = false;
+                    startButton.textContent = 'Start Schedule';
+                    startButton.classList.remove('active-schedule');
+                    
+                    // Enable form fields
+                    primaryDropdown.disabled = false;
+                    secondaryDropdown.disabled = false;
+                    switchTimeInput.disabled = false;
+                    revertTimeInput.disabled = false;
+                    
+                    // Add to activity log
+                    addLogEntry('Schedule stopped on server.', true);
+                    
+                    // Save state to localStorage
+                    saveSettings();
                 } else {
-                    addLogEntry(`Failed to import Excel data: ${data.error || 'Unknown error'}`, false);
+                    addLogEntry(`Failed to stop schedule: ${data.error || 'Unknown error'}`, false);
                 }
             })
             .catch(error => {
-                addLogEntry(`Error importing Excel data: ${error.message}`, false);
+                addLogEntry(`Error stopping schedule: ${error.message}`, false);
             });
         }
-        
-        // Helper functions
-        function getCsrfToken() {
-            const name = 'csrftoken';
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+
+        // Enhanced function to toggle schedule status
+        function toggleSchedule() {
+            if (scheduleRunning) {
+                stopSchedule();
+            } else {
+                startSchedule();
             }
-            return cookieValue;
         }
         
+        // Check schedule status immediately and periodically
+        function checkScheduleStatus() {
+            fetch('/api/schedule-status/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.active) {
+                        // Update UI to show schedule is running
+                        scheduleRunning = true;
+                        startButton.textContent = 'Stop Schedule';
+                        startButton.classList.add('active-schedule');
+                        
+                        // Disable form fields if needed
+                        primaryDropdown.disabled = true;
+                        secondaryDropdown.disabled = true;
+                        switchTimeInput.disabled = true;
+                        revertTimeInput.disabled = true;
+                        
+                        // Update schedule details if available
+                        if (data.schedule) {
+                            // Try to select the primary network if available
+                            if (data.schedule.primaryWifi) {
+                                for (let i = 0; i < primaryDropdown.options.length; i++) {
+                                    if (primaryDropdown.options[i].value === data.schedule.primaryWifi) {
+                                        primaryDropdown.selectedIndex = i;
+                                        break;
+                                    }
+                                }
+                                
+                                // Update secondary dropdown with current settings
+                                updateSecondaryDropdown();
+                                
+                                // Try to select the secondary network if available
+                                if (data.schedule.secondaryWifi) {
+                                    for (let i = 0; i < secondaryDropdown.options.length; i++) {
+                                        if (secondaryDropdown.options[i].value === data.schedule.secondaryWifi) {
+                                            secondaryDropdown.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Set the times
+                                if (data.schedule.switchTime) {
+                                    switchTimeInput.value = data.schedule.switchTime;
+                                }
+                                if (data.schedule.revertTime) {
+                                    revertTimeInput.value = data.schedule.revertTime;
+                                }
+                                
+                                // Update schedule info display
+                                updateScheduleInfo();
+                            }
+                        }
+
+                        // Add log entry if schedule is active but we just loaded the page
+                        if (!document.body.hasAttribute('data-schedule-status-checked')) {
+                            addLogEntry('Schedule is currently active and running on the server', true);
+                            document.body.setAttribute('data-schedule-status-checked', 'true');
+                        }
+                    } else {
+                        // Ensure UI shows schedule is not running
+                        if (scheduleRunning) {
+                            scheduleRunning = false;
+                            startButton.textContent = 'Start Schedule';
+                            startButton.classList.remove('active-schedule');
+                            
+                            // Enable form fields
+                            primaryDropdown.disabled = false;
+                            secondaryDropdown.disabled = false;
+                            switchTimeInput.disabled = false;
+                            revertTimeInput.disabled = false;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking schedule status:', error);
+                });
+        }
+        
+        // Helper function to add a log entry to the activity log
         function addLogEntry(message, isSuccess) {
-            const logTable = document.querySelector('.log-table tbody');
-            if (!logTable) return;
+            const logTableBody = document.querySelector('.log-table tbody');
+            if (!logTableBody) return;
             
-            // Create new row
+            // Create a new row for the log entry
             const row = document.createElement('tr');
             
-            // Add timestamp cell
-            const timeCell = document.createElement('td');
-            const now = new Date();
-            timeCell.textContent = now.toLocaleTimeString();
-            row.appendChild(timeCell);
+            // Get current timestamp
+            const timestamp = new Date().toLocaleString();
             
-            // Add message cell
-            const messageCell = document.createElement('td');
-            messageCell.textContent = message;
-            row.appendChild(messageCell);
+            // Set the row content
+            row.innerHTML = `
+                <td>${timestamp}</td>
+                <td>${message}</td>
+                <td>
+                    ${isSuccess ? 
+                    '<span class="badge badge-success">Success</span>' : 
+                    '<span class="badge badge-danger">Error</span>'}
+                </td>
+            `;
             
-            // Add status cell with badge
-            const statusCell = document.createElement('td');
-            const badge = document.createElement('span');
-            badge.classList.add('badge');
-            badge.classList.add(isSuccess ? 'badge-success' : 'badge-danger');
-            badge.textContent = isSuccess ? 'Success' : 'Error';
-            statusCell.appendChild(badge);
-            row.appendChild(statusCell);
-            
-            // Insert row at the beginning of the table
-            if (logTable.firstChild) {
-                logTable.insertBefore(row, logTable.firstChild);
+            // Add the new row at the top of the log table
+            if (logTableBody.firstChild) {
+                logTableBody.insertBefore(row, logTableBody.firstChild);
             } else {
-                logTable.appendChild(row);
+                logTableBody.appendChild(row);
             }
             
-            // Remove empty message row if it exists
-            const emptyRow = logTable.querySelector('tr td[colspan="3"]');
-            if (emptyRow) {
-                emptyRow.parentElement.remove();
-            }
-            
-            // Limit number of log entries (keep last 50)
-            const rows = logTable.querySelectorAll('tr');
-            if (rows.length > 50) {
-                logTable.removeChild(rows[rows.length - 1]);
+            // Limit the number of visible log entries
+            const maxEntries = 50;
+            const entries = logTableBody.querySelectorAll('tr');
+            if (entries.length > maxEntries) {
+                for (let i = maxEntries; i < entries.length; i++) {
+                    logTableBody.removeChild(entries[i]);
+                }
             }
         }
         
-        // Add CSS for active schedule button
-        const style = document.createElement('style');
-        style.textContent = `
-            .active-schedule {
-                background-color: #dc3545 !important; 
-                animation: pulse 2s infinite;
-            }
-            @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-                70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-            }
-        `;
-        document.head.appendChild(style);
-        
+        // Helper function to get CSRF token
+        function getCsrfToken() {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+            return cookieValue;
+        }
+
         // Initialize event listeners
         switchTimeInput.addEventListener('change', updateScheduleInfo);
         revertTimeInput.addEventListener('change', updateScheduleInfo);
         startButton.addEventListener('click', toggleSchedule);
         
         // Initialize the page
-        populateWifiDropdowns();
+        populateWifiDropdowns().then(() => {
+            // Check server-side schedule status after networks are loaded
+            checkScheduleStatus();
+            
+            // Check status periodically to keep UI in sync with server
+            setInterval(checkScheduleStatus, 30000); // Check every 30 seconds
+        });
         updateScheduleInfo();
     });
 </script>

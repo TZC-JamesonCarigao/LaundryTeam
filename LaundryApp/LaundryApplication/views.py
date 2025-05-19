@@ -6,18 +6,21 @@ from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
-from .models import LaundryData, DisplayData  # Import DisplayData here
+from .models import LaundryData, DisplayData, MeterData  # Import MeterData here
 import logging
+from .models import UtilityCost
+from .forms import UtilityCostForm
 
 #NEW Start
 from .models import WiFiNetwork, Schedule, ConnectionLog
-from .tasks import WiFiConnectionManager
+from .tasks import WiFiConnectionManager, meter_data_fetcher  # Import meter_data_fetcher here
 #NEW End
 
 import json
 import subprocess
 import platform
 import re
+import os
 
 # Configure logger  
 logger = logging.getLogger(__name__)
@@ -35,9 +38,48 @@ class CustomLoginView(View):
                 elif request.user.profile.role == 'Operator':
                     return redirect('dashboard')  # Updated: was 'operator_home'
             return redirect('home')
-        return render(request, self.template_name)
+        
+        # Get current WiFi info
+        wifi_manager = WiFiConnectionManager()
+        current_ssid = wifi_manager.get_current_ssid()
+        
+        # Debug info to help troubleshoot
+        print(f"Login page - Detected WiFi: {current_ssid}")
+        
+        # Define allowed WiFi networks (you can store this in settings or database)
+        allowed_networks = ['Converge_2.4GHz_Yj3u']
+        is_allowed_wifi = current_ssid in allowed_networks
+        
+        # Additional check for partial matches (in case of encoding issues)
+        if not is_allowed_wifi and current_ssid:
+            for network in allowed_networks:
+                if network in current_ssid or current_ssid in network:
+                    print(f"Partial match found: '{current_ssid}' and '{network}'")
+                    is_allowed_wifi = True
+                    current_ssid = network  # Use the known network name 
+                    break
+        
+        context = {
+            'current_ssid': current_ssid,
+            'is_allowed_wifi': is_allowed_wifi,
+            'allowed_networks': allowed_networks
+        }
+        return render(request, self.template_name, context)
 
     def post(self, request):
+        # Check WiFi again on form submission as an additional security measure
+        wifi_manager = WiFiConnectionManager()
+        current_ssid = wifi_manager.get_current_ssid()
+        allowed_networks = ['Converge_2.4GHz_Yj3u']
+        
+        if current_ssid not in allowed_networks:
+            messages.error(request, 'Login not allowed from this network.')
+            return render(request, self.template_name, {
+                'current_ssid': current_ssid,
+                'is_allowed_wifi': False,
+                'allowed_networks': allowed_networks
+            })
+        
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
@@ -184,7 +226,7 @@ def display_data_ajax(request):
             "recordsFiltered": 0,
             "data": [],
             "error": str(e)
-        }, status=200)  # Send 200 status with error info for DataTables to display
+        }, status=200, Status=200)  # Send 200 status with error info for DataTables to display
 
 # @login_required
 # def dashboard(request):
@@ -324,7 +366,7 @@ def laundry_data_ajax(request):
             "recordsFiltered": 0,
             "data": [],
             "error": str(e)
-        }, status=200)  # Send 200 status with error info for DataTables to display
+        }, status=200, Status=200)  # Send 200 status with error info for DataTables to display
     
 #NEW Start
 # @method_decorator(login_required, name='dispatch')
@@ -476,6 +518,9 @@ class IndexView(View):
             
             status = 'activated' if schedule.is_active else 'deactivated'
             messages.success(request, f'Schedule {status} successfully')
+
+            Status = 'activated' if schedule.is_active else 'deactivated'
+            messages.success(request, f'Schedule {Status} successfully')
         
         return redirect('settings')
 
@@ -491,6 +536,7 @@ class StatusView(View):
             'current_ssid': current_ssid,
         }
         return render(request, 'status.html', context)
+        return render(request, 'Status.html', context)
 
 @login_required
 def get_saved_networks(request):
@@ -588,7 +634,7 @@ def get_saved_networks(request):
         
     except Exception as e:
         logger.error(f"Error in get_saved_networks: {str(e)}", exc_info=True)
-        return JsonResponse({'error': str(e), 'detail': 'Error detecting WiFi networks'}, status=500)
+        return JsonResponse({'error': str(e), 'detail': 'Error detecting WiFi networks'}, status=500, Status=500)
 
 import datetime
 import pandas as pd
@@ -789,3 +835,154 @@ def import_excel_data(request):
             message=error_msg,
             is_success=False
         )
+
+# Only start the background tasks when running the server
+import sys
+
+if 'runserver' in sys.argv:
+    logger.info("Starting meter data fetcher...")
+    try:
+        meter_data_fetcher.start()
+        logger.info("Meter data fetcher started")
+    except Exception as e:
+        logger.error(f"Failed to start meter data fetcher: {str(e)}")
+
+@login_required
+def meter_data(request):
+    """View for displaying MeterData records"""
+    # Count records for debugging
+    record_count = MeterData.objects.count()
+    logger.info(f"MeterData records available: {record_count}")
+    
+    return render(request, 'meter_data.html', {'title': 'Meter Data'})
+
+@login_required
+def meter_data_ajax(request):
+    """API endpoint to retrieve meter data for DataTables"""
+    try:
+        # Get pagination parameters from DataTables
+        draw = int(request.GET.get('draw', 1))
+        start = int(request.GET.get('start', 0))
+        length = int(request.GET.get('length', 25))
+        
+        # Check if this is an auto-refresh request
+        is_auto_refresh = 'autoRefresh' in request.GET
+        
+        # Get total record count
+        total_records = MeterData.objects.count()
+        
+        # Start with base queryset ordered by timestamp (newest first)
+        queryset = MeterData.objects.all().order_by('-timestamp')
+        
+        # Apply filters only if they are explicitly provided
+        from_date = request.GET.get('fromDate', '').strip()
+        to_date = request.GET.get('toDate', '').strip()
+        meter_id = request.GET.get('meterId', '').strip()
+        
+        # Only apply filters if they have values and this is not an auto-refresh
+        if not is_auto_refresh:
+            if from_date:
+                queryset = queryset.filter(timestamp__gte=from_date)
+            if to_date:
+                queryset = queryset.filter(timestamp__lte=to_date)
+            if meter_id:
+                queryset = queryset.filter(meterId=meter_id)
+        
+        # Get filtered count
+        filtered_records = queryset.count()
+        
+        # Apply pagination
+        paginated_queryset = queryset[start:start + length]
+        
+        # Prepare response data
+        data = []
+        for item in paginated_queryset:
+            data.append({
+                "id": item.id,
+                "meterId": item.meterId,
+                "consumptionRecordId": item.consumptionRecordId or "",  # Handle None values
+                "timestamp": item.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                "value": item.value,
+                "correctionFactor": item.correctionFactor,
+                "created_at": item.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        logger.debug(f"Returning {len(data)} meter records (page {start//length + 1}, size {length})")
+        
+        # Return data in the format expected by DataTables
+        return JsonResponse({
+            "draw": draw,
+            "recordsTotal": total_records,
+            "recordsFiltered": filtered_records,
+            "data": data
+        })
+    
+    except Exception as e:
+        logger.error(f"Error in meter_data_ajax: {str(e)}", exc_info=True)
+        return JsonResponse({
+            "draw": int(request.GET.get('draw', 1)),
+            "recordsTotal": 0,
+            "recordsFiltered": 0,
+            "data": [],
+            "error": str(e)
+        }, status=200, Status=200)
+
+@login_required
+def clear_meter_data(request):
+    """Admin function to clear all meter data records"""
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to perform this action")
+        return redirect('dashboard')
+        
+    if request.method == 'POST' and request.POST.get('confirm') == 'yes':
+        from django.db import connection
+        
+        # Get record count before deletion
+        count = MeterData.objects.count()
+        
+        # Use raw SQL for faster deletion
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM LaundryApplication_meterdata")
+            
+        messages.success(request, f"Successfully deleted {count} meter data records")
+        return redirect('dashboard')
+    
+    return render(request, 'clear_data_confirm.html')
+
+@login_required
+def utility_costs(request):
+    # Get the most recent utility costs if they exist
+    latest_costs = UtilityCost.objects.last()
+    
+    if request.method == 'POST':
+        form = UtilityCostForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Utility costs saved successfully!')
+            return redirect('utility_costs')
+    else:
+        form = UtilityCostForm(instance=latest_costs)
+    
+    context = {
+        'form': form,
+        'latest_costs': latest_costs,
+    }
+    return render(request, 'utility_costs.html', context)
+
+@login_required
+def settings(request):
+    """View for the WiFi schedule settings page"""
+    # Get the current WiFi connection
+    from .tasks import WiFiConnectionManager
+    current_ssid = WiFiConnectionManager().get_current_ssid()
+    
+    # Get the most recent log entries
+    logs = ConnectionLog.objects.all().order_by('-timestamp')[:20]
+    
+    context = {
+        'title': 'WiFi Schedule Settings',
+        'current_ssid': current_ssid,
+        'logs': logs
+    }
+    
+    return render(request, 'settings.html', context)

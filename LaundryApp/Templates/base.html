@@ -38,7 +38,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     
-
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
 
         
     <!-- Spinner Styles -->
@@ -153,6 +153,14 @@
                         </a>
                     </li>
 
+                    <!-- New Meter Data Menu Item -->
+                    <li class="nav-item">
+                        <a href="{% url 'meter_data' %}" class="nav-link {% if request.resolver_match.url_name == 'meter_data' %}active{% endif %}">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Meter Data</p>
+                        </a>
+                    </li>
+
                     <!-- <li class="nav-item">
                         <a href="{% url 'customers' %}" class="nav-link {% if request.resolver_match.url_name == 'customers' %}active{% endif %}">
                             <i class="nav-icon fas fa-user-tie"></i>
@@ -167,12 +175,20 @@
                         </a>
                     </li> -->
 
+
                     <!-- <li class="nav-item">
                         <a href="{% url 'downloads' %}" class="nav-link {% if request.resolver_match.url_name == 'downloads' %}active{% endif %}">
                             <i class="nav-icon fas fa-cloud-download-alt"></i>
                             <p>Downloads</p>
                         </a>
                     </li> -->
+
+                    <li class="nav-item">
+                        <a href="{% url 'utility_costs' %}" class="nav-link {% if request.resolver_match.url_name == 'utility_costs' %}active{% endif %}">
+                            <i class="nav-icon fas fa-bolt"></i>
+                            <p>Utility Costs</p>
+                        </a>
+                    </li>
                     
                     <li class="nav-item">
                         <a href="{% url 'settings' %}" class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
@@ -180,6 +196,7 @@
                             <p>Settings</p>
                         </a>
                     </li>
+
 
                     <!-- Logout Link -->
                     <li class="nav-item">

@@ -3,8 +3,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-# from django.contrib.auth.models import User #New
+from django.contrib.auth.models import User
 from django.utils import timezone #NEW
+import datetime  # Add this import for default date
 
 
 # Authentication models - actively used
@@ -149,170 +150,77 @@ class DisplayData(models.Model):
         except (ValueError, TypeError):
             return None
 
-# class WiFiNetwork(models.Model): #New
-#     name = models.CharField(max_length=100)
-#     ssid = models.CharField(max_length=100)
-#     password = models.CharField(max_length=100, blank=True, null=True)
-#     is_primary = models.BooleanField(default=False)
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return f"{self.name} ({self.ssid})"
-
-# class Schedule(models.Model): #New
-#     name = models.CharField(max_length=100)
-#     primary_network = models.ForeignKey(
-#         WiFiNetwork, 
-#         related_name='primary_schedules',
-#         on_delete=models.CASCADE
-#     )
-#     secondary_network = models.ForeignKey(
-#         WiFiNetwork, 
-#         related_name='secondary_schedules',
-#         on_delete=models.CASCADE
-#     )
-#     switch_time = models.TimeField()
-#     revert_time = models.TimeField()
-#     is_active = models.BooleanField(default=False)
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.name} (Active: {self.is_active})"
-
-#NEW Start
-# class WiFiNetwork(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     name = models.CharField(max_length=100)
-#     ssid = models.CharField(max_length=100)
-#     password = models.CharField(max_length=100, blank=True, null=True)
-#     is_primary = models.BooleanField(default=False)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.name} ({self.ssid})"
-
-# class Schedule(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     name = models.CharField(max_length=100)
-#     primary_network = models.ForeignKey(
-#         WiFiNetwork, 
-#         related_name='primary_schedules',
-#         on_delete=models.CASCADE
-#     )
-#     secondary_network = models.ForeignKey(
-#         WiFiNetwork, 
-#         related_name='secondary_schedules',
-#         on_delete=models.CASCADE
-#     )
-#     switch_time = models.TimeField()
-#     revert_time = models.TimeField()
-#     is_active = models.BooleanField(default=False)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f"{self.name} (Active: {self.is_active})"
-
-
-#---2nd----
-
-# class WiFiNetwork(models.Model):
-#     ssid = models.CharField(max_length=100, unique=True)
-#     password = models.CharField(max_length=100, blank=True, null=True)
-#     is_primary = models.BooleanField(default=False)
-    
-#     def __str__(self):
-#         return self.ssid
-
-# class Schedule(models.Model):
-#     primary_network = models.ForeignKey(WiFiNetwork, on_delete=models.CASCADE, related_name='primary_schedules')
-#     secondary_network = models.ForeignKey(WiFiNetwork, on_delete=models.CASCADE, related_name='secondary_schedules')
-#     switch_time = models.TimeField()
-#     revert_time = models.TimeField()
-#     is_active = models.BooleanField(default=False)
-#     last_switch = models.DateTimeField(null=True, blank=True)
-    
-#     def __str__(self):
-#         return f"Schedule {self.id}"
-
-# class ConnectionLog(models.Model):
-#     timestamp = models.DateTimeField(auto_now_add=True)
-#     message = models.TextField()
-#     is_success = models.BooleanField(default=False)
-    
-#     class Meta:
-#         ordering = ['-timestamp']
-    
-#     def __str__(self):
-#         return f"{self.timestamp}: {self.message[:50]}"
-
-#---2nd---
-# class WiFiNetwork(models.Model):
-#     ssid = models.CharField(max_length=100, unique=True)
-#     password = models.CharField(max_length=100, blank=True, null=True)
-#     is_primary = models.BooleanField(default=False)
-    
-#     def __str__(self):
-#         return self.ssid
-
-# class Schedule(models.Model):
-#     primary_network = models.ForeignKey(WiFiNetwork, on_delete=models.CASCADE, related_name='primary_schedules')
-#     secondary_network = models.ForeignKey(WiFiNetwork, on_delete=models.CASCADE, related_name='secondary_schedules')
-#     switch_time = models.TimeField()
-#     revert_time = models.TimeField()
-#     is_active = models.BooleanField(default=False)
-#     last_switch = models.DateTimeField(null=True, blank=True)
-    
-#     def __str__(self):
-#         return f"Schedule {self.id}"
-
-# class ConnectionLog(models.Model):
-#     timestamp = models.DateTimeField(auto_now_add=True)
-#     message = models.TextField()
-#     is_success = models.BooleanField(default=False)
-    
-#     class Meta:
-#         ordering = ['-timestamp']
-    
-#     def __str__(self):
-#         return f"{self.timestamp}: {self.message[:50]}"
-
 class WiFiNetwork(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    ssid = models.CharField(max_length=100)
-    password = models.CharField(max_length=100, blank=True, null=True)
+    """Model for WiFi networks that can be scheduled"""
+    ssid = models.CharField(max_length=100, unique=True)
+    password = models.CharField(max_length=100, blank=True)
     is_primary = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
+    
     def __str__(self):
         return self.ssid
 
 class Schedule(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    primary_network = models.ForeignKey(WiFiNetwork, related_name='primary_schedules', on_delete=models.CASCADE)
-    secondary_network = models.ForeignKey(WiFiNetwork, related_name='secondary_schedules', on_delete=models.CASCADE)
-    switch_time = models.TimeField()
-    revert_time = models.TimeField()
+    """Model for WiFi switching schedules"""
+    primary_network = models.ForeignKey(
+        WiFiNetwork, 
+        related_name='primary_schedules',
+        on_delete=models.CASCADE
+    )
+    secondary_network = models.ForeignKey(
+        WiFiNetwork,
+        related_name='secondary_schedules',
+        on_delete=models.CASCADE
+    )
+    switch_time = models.CharField(max_length=5)  # Format: "HH:MM"
+    revert_time = models.CharField(max_length=5)  # Format: "HH:MM"
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
+    
     def __str__(self):
-        return f"Schedule {self.id}"
+        return f"{self.primary_network} ↔ {self.secondary_network}"
 
 class ConnectionLog(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    """Model for logging WiFi connection events"""
     timestamp = models.DateTimeField(auto_now_add=True)
-    message = models.TextField()
-    is_success = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ['-timestamp']
-
+    message = models.CharField(max_length=255)
+    is_success = models.BooleanField(default=True)
+    
     def __str__(self):
-        return f"{self.timestamp}: {self.message[:50]}"
-#NEW End
+        status = "Success" if self.is_success else "Error"
+        return f"{self.timestamp}: {status} - {self.message}"
+
+class MeterData(models.Model):
+    id = models.AutoField(primary_key=True)
+    meterId = models.IntegerField()
+    # consumptionRecordId field exists in the model but not in the database
+    # If you need this field, run migrations or remove it from the model
+    consumptionRecordId = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    timestamp = models.DateTimeField()
+    value = models.FloatField()
+    correctionFactor = models.FloatField()
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Meter {self.meterId} - {self.timestamp}"
+    
+    class Meta:
+        verbose_name = "Meter Data"
+        verbose_name_plural = "Meter Data"
+        ordering = ['-timestamp']
+        # Add unique constraint on consumptionRecordId
+        constraints = [
+            models.UniqueConstraint(fields=['consumptionRecordId'], name='unique_consumption_record', condition=models.Q(consumptionRecordId__isnull=False))
+        ]
+
+class UtilityCost(models.Model):
+    """Model to store utility costs"""
+    electricity_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    gas_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    water_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    effective_date = models.DateField(default=datetime.date.today)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Utility Costs as of {self.effective_date}"
