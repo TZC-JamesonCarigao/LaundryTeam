@@ -108,18 +108,70 @@
       margin-bottom: 0;
     }
 
-    /* Add these styles to the existing style section */
+    /* Enhanced WiFi Status Section Styling */
     .wifi-status-container {
-      margin-top: 15px;
-      padding: 10px;
-      border-radius: 8px;
-      background-color: rgba(0, 0, 0, 0.2);
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 12px;
+      background-color: rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .wifi-status-container:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     }
     
     .wifi-status {
       color: white;
       font-size: 14px;
-      padding: 5px 0;
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .wifi-icon {
+      margin-right: 10px;
+      font-size: 22px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .wifi-allowed .wifi-icon {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+    
+    .wifi-denied .wifi-icon {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+    
+    .wifi-detecting .wifi-icon {
+      background: rgba(33, 150, 243, 0.2);
+      color: #2196f3;
+    }
+    
+    .wifi-status-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex: 1;
+    }
+    
+    .wifi-network-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-top: 2px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     }
     
     .wifi-allowed {
@@ -130,10 +182,41 @@
       color: #f44336;
     }
     
+    .wifi-detecting {
+      color: #2196f3;
+    }
+    
+    .wifi-status-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid #2196f3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
     .wifi-warning {
       color: #ff9800;
-      font-size: 12px;
-      font-weight: bold;
+      font-size: 13px;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      background: rgba(255, 152, 0, 0.1);
+      border-left: 3px solid #ff9800;
+      text-align: left;
+    }
+    
+    .wifi-message-success {
+      color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+      border-left: 3px solid #4caf50;
     }
     
     .btn-disabled {
@@ -141,7 +224,43 @@
       opacity: 0.7;
       cursor: not-allowed;
     }
-
+    
+    .btn-retry {
+      background: linear-gradient(90deg, #ff9800, #f57c00);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      font-size: 14px;
+      border-radius: 5px;
+      margin-top: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
+    
+    .btn-retry:hover {
+      background: linear-gradient(90deg, #f57c00, #ef6c00);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    }
+    
+    .wifi-pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -179,20 +298,62 @@
               <div class="d-grid">
                 <button type="submit" class="btn btn-custom btn-block" id="loginButton">Login</button>
               </div>
-              <div class="mt-3 text-center wifi-status-container">
-                <div class="wifi-status {% if is_allowed_wifi %}wifi-allowed{% else %}wifi-denied{% endif %}">
-                  <i class="fas fa-wifi me-1"></i>
-                  <strong>Connected to:</strong> 
-                  <span id="current-network">{% if current_ssid %}{{ current_ssid }}{% else %}Not connected{% endif %}</span>
+              
+              <!-- Enhanced WiFi Status Container -->
+              <div class="mt-3 wifi-status-container fade-in">
+                <div id="wifi-status-display" class="wifi-status {% if is_allowed_wifi %}wifi-allowed{% elif detecting %}wifi-detecting{% else %}wifi-denied{% endif %}">
+                  <div class="wifi-icon {% if not is_allowed_wifi and not detecting %}wifi-pulse{% endif %}">
+                    {% if detecting %}
+                      <i class="fas fa-spinner fa-spin"></i>
+                    {% elif is_allowed_wifi %}
+                      <i class="fas fa-wifi"></i>
+                    {% else %}
+                      <i class="fas fa-wifi-slash"></i>
+                    {% endif %}
+                  </div>
+                  <div class="wifi-status-text">
+                    <span>Network Status</span>
+                    <span id="current-network" class="wifi-network-name">
+                      {% if detecting %}
+                        Detecting connection...
+                      {% elif current_ssid %}
+                        {{ current_ssid }}
+                      {% else %}
+                        Not connected
+                      {% endif %}
+                    </span>
+                  </div>
                 </div>
+                
+                <!-- Enhanced WiFi Warning Message -->
                 {% if not is_allowed_wifi %}
-                <div class="wifi-warning mt-2">
-                  <i class="fas fa-exclamation-triangle me-1"></i>
+                <div id="wifi-warning" class="wifi-warning fade-in">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
                   {% if current_ssid %}
-                    Network "{{ current_ssid }}" is not authorized. Please connect to: {{ allowed_networks|join:", " }}
+                    <strong>Unauthorized Network:</strong> "{{ current_ssid }}" is not an allowed network.
+                    <div class="mt-1 ms-4">Please connect to: 
+                      {% for network in allowed_networks %}
+                        <span class="badge bg-primary me-1">{{ network }}</span>
+                      {% endfor %}
+                    </div>
                   {% else %}
-                    No WiFi connection detected. Please connect to an authorized network to log in.
+                    <strong>No WiFi Connection:</strong> Please connect to an authorized network to log in.
+                    <div class="mt-1 ms-4">Allowed networks: 
+                      {% for network in allowed_networks %}
+                        <span class="badge bg-primary me-1">{{ network }}</span>
+                      {% endfor %}
+                    </div>
                   {% endif %}
+                  <div class="text-center mt-3">
+                    <button id="retry-button" class="btn-retry">
+                      <i class="fas fa-sync-alt me-1"></i> Retry WiFi Check
+                    </button>
+                  </div>
+                </div>
+                {% else %}
+                <div class="wifi-warning wifi-message-success fade-in">
+                  <i class="fas fa-check-circle me-2"></i>
+                  <strong>Connected to authorized network.</strong> You may proceed with login.
                 </div>
                 {% endif %}
               </div>
@@ -216,7 +377,76 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const loginButton = document.getElementById('loginButton');
-      const isAllowedWifi = {% if is_allowed_wifi %}true{% else %}false{% endif %};
+      const wifiStatus = document.getElementById('wifi-status-display');
+      const currentNetworkDisplay = document.getElementById('current-network');
+      const wifiWarning = document.getElementById('wifi-warning');
+      const retryButton = document.getElementById('retry-button');
+      
+      // Server-provided information
+      let isAllowedWifi = {% if is_allowed_wifi %}true{% else %}false{% endif %};
+      const allowedNetworks = {{ allowed_networks|safe|default:"['Converge_2.4GHz_Yj3u']" }};
+      
+      // Add event listener to retry button if it exists
+      if (retryButton) {
+        retryButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Show detecting status
+          wifiStatus.className = 'wifi-status wifi-detecting';
+          wifiStatus.querySelector('.wifi-icon').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          currentNetworkDisplay.textContent = 'Checking connection...';
+          
+          // Reload page after a short delay to show the animation
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
+        });
+      }
+      
+      // Client-side WiFi detection attempt (backup method)
+      // Note: This is limited by browser security, but we'll try
+      function attemptClientSideWifiDetection() {
+        // First, check if we already have a valid network from the server
+        if (isAllowedWifi) {
+          return;
+        }
+
+        // Try to fetch the current hostname to infer network info
+        const hostname = window.location.hostname;
+        if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+          // Check if the hostname contains any of the allowed networks (best effort)
+          for (const network of allowedNetworks) {
+            if (hostname.includes(network.toLowerCase().replace(/[^a-z0-9]/gi, ''))) {
+              console.log(`Possible network match via hostname: ${network}`);
+              
+              // Update the UI
+              wifiStatus.className = 'wifi-status wifi-allowed fade-in';
+              wifiStatus.querySelector('.wifi-icon').innerHTML = '<i class="fas fa-wifi"></i>';
+              wifiStatus.querySelector('.wifi-icon').classList.remove('wifi-pulse');
+              currentNetworkDisplay.textContent = network;
+              
+              // Replace warning with success message
+              if (wifiWarning) {
+                wifiWarning.className = 'wifi-warning wifi-message-success fade-in';
+                wifiWarning.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Connected to authorized network.</strong> You may proceed with login.';
+              }
+              
+              // Enable login button
+              loginButton.disabled = false;
+              loginButton.textContent = 'Login';
+              loginButton.classList.remove('btn-disabled');
+              
+              return;
+            }
+          }
+        }
+
+        // If we get here, client-side detection didn't find an allowed network
+        console.log('Client-side WiFi detection failed to find allowed network');
+      }
+      
+      // Try client-side detection after a short delay
+      setTimeout(attemptClientSideWifiDetection, 500);
       
       // Disable login button if not on allowed WiFi
       if (!isAllowedWifi) {

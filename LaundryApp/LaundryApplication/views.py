@@ -25,6 +25,114 @@ import os
 # Configure logger  
 logger = logging.getLogger(__name__)
 
+def detect_wifi_robust(allowed_networks=None):
+    """
+    Robust WiFi detection function specifically for login page
+    Uses multiple detection methods with fallbacks
+    """
+    # Default allowed networks if not specified
+    if allowed_networks is None:
+        allowed_networks = ['Converge_2.4GHz_Yj3u']
+    
+    current_ssid = None
+    debug_info = []
+    
+    # Try multiple methods to detect WiFi
+    os_name = platform.system()
+    
+    # Method 1: Using WiFiConnectionManager (existing method)
+    try:
+        wifi_manager = WiFiConnectionManager()
+        current_ssid = wifi_manager.get_current_ssid()
+        debug_info.append(f"Method 1 result: {current_ssid}")
+    except Exception as e:
+        debug_info.append(f"Method 1 error: {str(e)}")
+    
+    # Method 2: Direct command execution with alternative parsing
+    if not current_ssid and os_name == "Windows":
+        try:
+            # Use more explicit encoding parameters
+            result = subprocess.run(
+                ['netsh', 'wlan', 'show', 'interfaces'],
+                capture_output=True, 
+                text=True,
+                encoding='utf-8',
+                errors='replace'
+            )
+            
+            # More flexible regex patterns
+            patterns = [
+                r'SSID\s*:\s*(.*?)[\r\n]',
+                r'SSID\s+:\s+(.*?)[\r\n]',
+                r'Profile\s*:\s*(.*?)[\r\n]',
+                r'Profile\s+:\s+(.*?)[\r\n]'
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, result.stdout)
+                if match and match.group(1).strip():
+                    current_ssid = match.group(1).strip()
+                    debug_info.append(f"Method 2 pattern '{pattern}' matched: {current_ssid}")
+                    break
+            
+            if not current_ssid:
+                debug_info.append(f"Method 2: No regex matches. Command output: {result.stdout[:200]}...")
+        except Exception as e:
+            debug_info.append(f"Method 2 error: {str(e)}")
+    
+    # Method 3: Try alternative commands for Windows
+    if not current_ssid and os_name == "Windows":
+        try:
+            result = subprocess.run(
+                ['netsh', 'wlan', 'show', 'state'],
+                capture_output=True, 
+                text=True,
+                encoding='utf-8',
+                errors='replace'
+            )
+            
+            # Look for SSID in output
+            match = re.search(r'SSID\s*:?\s*(.*?)[\r\n]', result.stdout)
+            if match and match.group(1).strip():
+                current_ssid = match.group(1).strip()
+                debug_info.append(f"Method 3 result: {current_ssid}")
+            else:
+                debug_info.append(f"Method 3: Command ran but no SSID found")
+        except Exception as e:
+            debug_info.append(f"Method 3 error: {str(e)}")
+    
+    # Log debug info
+    logger.debug("WiFi detection debug info: " + " | ".join(debug_info))
+    
+    # Determine if WiFi is allowed
+    is_allowed_wifi = False
+    if current_ssid:
+        # Exact match
+        if current_ssid in allowed_networks:
+            is_allowed_wifi = True
+        else:
+            # Partial match check (for potential encoding issues)
+            for network in allowed_networks:
+                if network in current_ssid or current_ssid in network:
+                    logger.info(f"Partial WiFi match: '{current_ssid}' matches allowed network '{network}'")
+                    current_ssid = network  # Use the known network name
+                    is_allowed_wifi = True
+                    break
+    
+    # Last resort: Hardcoded override for testing environments
+    # Uncomment for testing if needed
+    # if not current_ssid and os.environ.get('DJANGO_ENV') == 'development':
+    #     current_ssid = 'Converge_2.4GHz_Yj3u'
+    #     is_allowed_wifi = True
+    #     logger.warning("Using development mode hardcoded WiFi override")
+    
+    return {
+        'current_ssid': current_ssid,
+        'is_allowed_wifi': is_allowed_wifi,
+        'allowed_networks': allowed_networks,
+        'debug_info': debug_info
+    }
+
 class CustomLoginView(View):
     template_name = 'login.html'  
 
@@ -39,44 +147,38 @@ class CustomLoginView(View):
                     return redirect('dashboard')  # Updated: was 'operator_home'
             return redirect('home')
         
-        # Get current WiFi info
-        wifi_manager = WiFiConnectionManager()
-        current_ssid = wifi_manager.get_current_ssid()
+        # Use the robust WiFi detection function
+        wifi_info = detect_wifi_robust()
         
-        # Debug info to help troubleshoot
-        print(f"Login page - Detected WiFi: {current_ssid}")
+        # Debug logging
+        logger.info(f"Login page - Detected WiFi: {wifi_info['current_ssid']}")
+        logger.debug(f"WiFi detection info: {wifi_info['debug_info']}")
         
-        # Define allowed WiFi networks (you can store this in settings or database)
-        allowed_networks = ['Converge_2.4GHz_Yj3u']
-        is_allowed_wifi = current_ssid in allowed_networks
-        
-        # Additional check for partial matches (in case of encoding issues)
-        if not is_allowed_wifi and current_ssid:
-            for network in allowed_networks:
-                if network in current_ssid or current_ssid in network:
-                    print(f"Partial match found: '{current_ssid}' and '{network}'")
-                    is_allowed_wifi = True
-                    current_ssid = network  # Use the known network name 
-                    break
+        # Extract info for template context
+        current_ssid = wifi_info['current_ssid']
+        is_allowed_wifi = wifi_info['is_allowed_wifi']
+        allowed_networks = wifi_info['allowed_networks']
         
         context = {
             'current_ssid': current_ssid,
             'is_allowed_wifi': is_allowed_wifi,
-            'allowed_networks': allowed_networks
+            'allowed_networks': allowed_networks,
+            'detecting': False,  # WiFi detection completed
         }
         return render(request, self.template_name, context)
 
     def post(self, request):
         # Check WiFi again on form submission as an additional security measure
-        wifi_manager = WiFiConnectionManager()
-        current_ssid = wifi_manager.get_current_ssid()
-        allowed_networks = ['Converge_2.4GHz_Yj3u']
+        wifi_info = detect_wifi_robust()
+        current_ssid = wifi_info['current_ssid']
+        is_allowed_wifi = wifi_info['is_allowed_wifi']
+        allowed_networks = wifi_info['allowed_networks']
         
-        if current_ssid not in allowed_networks:
+        if not is_allowed_wifi:
             messages.error(request, 'Login not allowed from this network.')
             return render(request, self.template_name, {
                 'current_ssid': current_ssid,
-                'is_allowed_wifi': False,
+                'is_allowed_wifi': is_allowed_wifi,
                 'allowed_networks': allowed_networks
             })
         
@@ -968,6 +1070,26 @@ def utility_costs(request):
         'latest_costs': latest_costs,
     }
     return render(request, 'utility_costs.html', context)
+
+# @login_required
+# def utility_costs(request):
+#     # Get the most recent utility costs if they exist
+#     latest_costs = UtilityCost.objects.last()
+    
+#     if request.method == 'POST':
+#         form = UtilityCostForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, 'Utility costs saved successfully!')
+#             return redirect('utility_costs')
+#     else:
+#         form = UtilityCostForm(instance=latest_costs)
+    
+#     context = {
+#         'form': form,
+#         'latest_costs': latest_costs,
+#     }
+#     return render(request, 'utility_costs.html', context)
 
 @login_required
 def settings(request):

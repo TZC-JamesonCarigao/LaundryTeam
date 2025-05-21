@@ -43,3 +43,21 @@ class UtilityCostForm(forms.ModelForm):
             'gas_cost': 'Gas Cost (per unit)',
             'water_cost': 'Water Cost (per unit)',
         }
+
+# class UtilityCostForm(forms.ModelForm):
+#     electricity_cost = forms.DecimalField(
+#         label='Electricity Cost (per unit)',
+#         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+#     )
+#     gas_cost = forms.DecimalField(
+#         label='Gas Cost (per unit)',
+#         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+#     )
+#     water_cost = forms.DecimalField(
+#         label='Water Cost (per unit)',
+#         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+#     )
+
+#     class Meta:
+#         model = UtilityCost
+#         fields = ['electricity_cost', 'gas_cost', 'water_cost']
