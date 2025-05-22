@@ -60,4 +60,10 @@ urlpatterns = [
     path('api/start-schedule/', api_views.start_schedule, name='start_schedule'),
     path('api/stop-schedule/', api_views.stop_schedule, name='stop_schedule'),
     path('api/schedule-status/', api_views.schedule_status, name='schedule_status'),
+
+    # Test endpoint for WiFi detection
+    path('api/test-wifi-detection/', api_views.test_wifi_detection, name='test_wifi_detection'),
+
+    # New debug WiFi endpoint
+    path('api/debug-wifi/', api_views.debug_current_wifi, name='debug_wifi'),
 ]

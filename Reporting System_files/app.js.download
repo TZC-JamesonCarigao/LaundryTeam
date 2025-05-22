@@ -1,0 +1,2602 @@
+var URL = "/";
+var actualURL = URL;
+var dosingDevices;
+var loadingWindow;
+var onlineStr = '<img style="height:20px; margin-right:3px; margin-bottom:-4px;" src="' + URL + 'images/online.png"  title="online"  alt="online" >';
+var offlineStr = '<img style="height:20px; margin-right:3px; margin-bottom:-4px;" src="' + URL + 'images/offline.png" title="offline" alt="offline">';
+var activeId = "";
+var kellFrissiteni = true;
+
+$(function () {
+    //setDateOnServer();
+    $(".button").button();
+    //getDosingDevices();
+//	dateSetter();
+    loadingWindow = 0;
+    isLoadingWindow();
+    $("#menu").tabs();
+
+    $("#shutdown").click(function () {
+        shutDown();
+    });
+
+    bgloading();
+    getNewBatches();
+    $("#debug").draggable();
+    $("#debug").dblclick(function () {
+        $("#debug").hide()
+    });
+    isUpdate();
+    isLoggedOut();
+});
+
+function shutDown() {
+    $("#shutdown").html("Shutting down pi...");
+    $.ajax({
+        url: "/ajax.php",
+        type: "GET",
+        data: {action: "shutDown"}
+    }).done(function (data) {
+        function success() {
+            setTimeout(function () {
+                $.ajax({
+                    url: "/ajax.php",
+                    type: "GET",
+                    timeout: 3000,
+                    data: {action: "shutDown"}
+                }).error(function (data) {
+                    setTimeout(function() {
+                        $("#shutdown").html("Pi is down...");
+                        $("#shutdown").css("background", '#aaffaa');
+                        $("#shutdown").css("border", '1px solid green');
+                        $("#shutdown").css("color", 'green');
+                    }, 12000);
+                    
+                    
+                }).done(function () {
+                    success();
+                });
+            }, 5000);
+        }
+        success();
+    });
+} 
+function runIfNotDisabled(f, button) {
+    if ($(button).hasClass("disabled"))
+        return false;
+    f();
+}
+
+function setDateOnServer() {
+    var d = new Date();
+    var dayNameArr = new Array("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun");
+    var MonthNameArr = new Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+    var date = dayNameArr[d.getDay()] + " " + MonthNameArr[d.getMonth()] + " " + d.getDate() + ' ' +
+            ((d.getHours() < 10) ? "0" + d.getHours() : d.getHours()) + ':' + ((d.getMinutes() < 10) ? "0" + d.getMinutes() : d.getMinutes())
+            + ":" + ((d.getSeconds() < 10) ? "0" + d.getSeconds() : d.getSeconds()) +
+            " UTC " + d.getFullYear();
+    console.log(date);
+    $.ajax({
+        url: "ajax.php",
+        type: "GET",
+        data: {action: "setDate",
+            date: date}
+    }).done(function (data) {
+        console.log(data);
+    });
+}
+
+function saveAlarmLevel(level) {
+    $.ajax({
+        url: "/ajax.php",
+        type: "GET",
+        data: {action: "setAlarmLevel",
+            level: level}
+    }).done(function (data) {
+        console.log(data);
+    });
+}
+
+function setAlarmLevel(code, ddt_id, level) {
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "setAlarmLevel",
+            mainObj: "reportSettings",
+            level: level,
+            ddt_id: ddt_id,
+            code: code
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#alarm_" + code).addClass("ok");
+        setTimeout(function () {
+            $("#alarm_" + code).removeClass("ok");
+        }, 3000);
+    });
+}
+
+function setUpSMS(id, cbx) {
+    var sms = false;
+    if ($(cbx).is(':checked'))
+        sms = true;
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "setSms",
+            mainObj: "reportSettings",
+            sms: sms,
+            id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#smsToUser_" + code + "_" + ddt_id).addClass("ok");
+        setTimeout(function () {
+            $("#smsToUser_" + code + "_" + ddt_id).removeClass("ok");
+        }, 3000);
+    });
+}
+
+function saveChemical(id) {
+    //var chemicalName = $("#chemical_name").val();
+    //var density = $("#density").val();
+    var price = $("#price").val();
+    var action = "save";
+    if (id == "") {
+        action = "insert";
+    }
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: action,
+            mainObj: "chemicals",
+            price: price,
+            id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        //showStatusWindow('Chemical (' + chemicalName + ') saved.', "Chemical saved");
+        listChemicals();
+    });
+}
+
+function showStatusWindow(status, title) {
+    $("#statusWindow").html(status);
+    $("#statusWindow").dialog({
+        title: title,
+        buttons: {
+            Ok: function () {
+                $(this).dialog("close");
+            }
+        }
+    });
+}
+
+function deleteItem(itemType, id, name) {
+    $("#statusWindow").html("Do you really want to delete this " + name + '?');
+    $("#statusWindow").dialog({
+        title: "Delete",
+        buttons: {
+            Ok: function () {
+                $.ajax({
+                    url: URL + "ajax.php",
+                    data: {
+                        action: "delete",
+                        mainObj: itemType,
+                        id: id
+                    },
+                    type: "GET"
+                }).done(function (data) {
+                    if (data.length > 0) {
+//                        console.log("'" + data + "'");
+                        $("#statusWindow").dialog("close");
+                        $("#statusWindow").html(name + " problem.");
+                    } else {
+                        $("#statusWindow").dialog("close");
+                        $("#statusWindow").html(name + " deleted.");
+                        $("#statusWindow").dialog({
+                            title: "Deleted",
+                            buttons: {
+                                Ok: function () {
+                                    $(this).dialog("close");
+                                }
+                            }
+                        });
+                        $("#listrow_" + id).fadeOut();
+                    }
+
+                });
+
+            },
+            Cancel: function () {
+                $(this).dialog("close");
+            }
+        }
+    });
+}
+
+function saveDosingDevice(id) {
+    var dosingDeviceName = $("#dosing_device_name").val();
+    var ipAddress = $("#ip_address").val();
+    var waste_water_as_press = $("#waste_water_as_press").is(':checked');
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "save",
+            mainObj: "dosingDevices",
+            dosingDeviceName: dosingDeviceName,
+            ipAddress: ipAddress,
+            waste_water_as_press: waste_water_as_press,
+            id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+//            console.log("'" + data + "'");
+        } else {
+            showStatusWindow('Dosing device (' + dosingDeviceName + ') saved.', "Dosing device saved");
+        }
+    });
+}
+
+function createDosingDevice(id) {
+    var dosingDeviceName = $("#dosing_device_name").val();
+    var dosing_device_type_id = $("#dosing_device_type_id").val();
+    var ipAddress = $("#ip_address").val();
+    var nodeNumber = $("#nodeNumber").val();
+    $("#dosing_device_name_err").html("");
+    $("#ip_address_err").html("");
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "create",
+            mainObj: "dosingDevices",
+            dosingDeviceName: dosingDeviceName,
+            ipAddress: ipAddress,
+            dosing_device_type_id:dosing_device_type_id,
+            nodeNumber:nodeNumber
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            console.log("'" + data + "'");
+            if (data == "errorDDName") {
+                $("#dosing_device_name").focus();
+                $("#dosing_device_name_err").html("This name is used. Please type a unique name!");
+            }
+            if (data == "errorIPAddr") {
+                $("#ip_address").focus();
+                $("#ip_address_err").html("This IP address is used. Please change the IP adress or node number!");
+            
+            }
+            if (data == "errorFC2") {
+                showStatusWindow("Only one Flux-Compact 2.0 can be handled by the Reporting System");
+            }
+            if (data == "errorFBP") {
+                showStatusWindow("Only one Flux-Box plus can be handled by the Reporting System with node number " + nodeNumber + "!");
+            }
+        } else {
+            showStatusWindow('Dosing device (' + dosingDeviceName + ') saved.', "Dosing device saved");
+            listDosingDevices();
+        }
+    });
+}
+
+function showColumn(element, column) {
+    var current_status = $(element).html();
+    if (current_status == "[-]") {
+        $(element).html("[+]");
+        $(".column" + column).fadeOut();
+    } else {
+        $(element).html("[-]");
+        $(".column" + column).fadeIn();
+    }
+
+}
+
+function saveClassificationDosing(id, classification_id, column, num) {
+    loading("on");
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "classifications",
+            mainObj: "dosingDevices",
+            action2: "update_dosing",
+            id2: classification_id,
+            column: column,
+            num: num,
+            chemical_id: $("#chemical_id_" + id).val(),
+            to_dose: $("#to_dose_" + id).val(),
+            classification_dosing_id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+//            console.log("'" + data + "'");
+        } else {
+            location.reload();
+        }
+    });
+}
+
+function addClassificationDosing(classification_id, column, num) {
+    loading("on");
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "classifications",
+            mainObj: "dosingDevices",
+            action2: "insert_dosing",
+            id2: classification_id,
+            column: column,
+            num: num,
+            chemical_id: $("#chemical_id_" + classification_id + "_" + column + '_' + num).val(),
+            to_dose: $("#to_dose_" + classification_id + "_" + column + '_' + num).val()
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+//            console.log("'" + data + "'");
+        } else {
+            location.reload();
+        }
+    });
+}
+
+function addClassification() {
+    loading('on');
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "insert",
+            mainObj: "classifications",
+            num: $("#num").val(),
+            classification_name: $("#classification_name").val(),
+            triggers: $("#triggers").val(),
+            dosingDeviceId: $("#dosingDeviceId").val(),
+            classification_type: $("#classification_type").val()
+        },
+        type: "GET"
+    }).done(function (data) {
+        loading('off');
+        if ((typeof data === 'number' || typeof data === 'string') && data !== '' && !isNaN(data)) {
+            location.href = URL + "classifications/" + data + "/edit#classificationsTab";
+        } else {
+            alert(data);
+            alert("Error. Classification has been inserted, but the triggers couldn't loaded.")
+            loading('off');
+            listClassifications();
+        }
+    });
+}
+
+function deleteClassification(classification_id) {
+    loading("on");
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "classifications",
+            mainObj: "dosingDevices",
+            action2: "delete",
+            classification_id: classification_id
+        },
+        type: "GET"
+    }).done(function (data) {
+        loading("off");
+        if (data != '') {
+//            console.log(data);
+        } else {
+            $("#item_" + classification_id).fadeOut();
+        }
+    });
+}
+
+function getDosingDevices() {
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "getDosingDevices"
+        },
+        dataType: 'json',
+        type: "GET"
+    }).done(function (data) {
+        dosingDevices = data;
+        for (var i = 0; i < dosingDevices.length; i++) {
+            var id = dosingDevices[i].id;
+            isOnline(id, dosingDevices[i].dosing_device_type_id, i, function (index) {
+                //onlineOffline();
+                //getTodayData(index);
+            });
+        }
+    });
+}
+
+function onlineOffline() {
+//    for (var i = 0; i < dosingDevices.length; i++) {
+//        if (dosingDevices[i].online == 1) {
+//            $(".onoff" + dosingDevices[i].id).html(onlineStr);
+//        } else {
+//            $(".onoff" + dosingDevices[i].id).html(offlineStr);
+//        }
+//    }
+}
+
+function isOnline(id, type, index, callback) {
+    $.ajax({
+        url: URL + "ajax.php",
+        timeout: 2000,
+        data: {
+            action: "isActiveDosingDevice",
+            id: id,
+            dosing_device_type_id: type
+        },
+        dataType: 'json',
+        type: "GET"
+    }).done(function (data) {
+        //if (data.data == "1") {
+        if (dosingDevices[index].online == 0) {
+            dosingDevices[index].online = 1;
+            onlineOffline();
+        }
+        //} else {
+        //  if (dosingDevices[index].online == 1) {
+        //    dosingDevices[index].online = 0;
+        //  onlineOffline();
+        //  }
+        //}
+        callback(index);
+        //   setTimeout(function() {
+        //     isOnline(id, type, index, function(index) {
+        //   });
+//        }, 5000);
+    });
+}
+
+function dateSetter() {
+    $("#from").datepicker({
+        defaultDate: "-1m",
+        changeMonth: true,
+        numberOfMonths: 3,
+        dateFormat: "yy-mm-dd",
+        maxDate: "+0D",
+        onClose: function (selectedDate) {
+            $("#to").datepicker("option", "minDate", selectedDate);
+            syncronizeDates();
+            setTimeout(function () {
+                getRangeData();
+            }, 100);
+        }
+    });
+    $("#to").datepicker({
+        defaultDate: "+0D",
+        changeMonth: true,
+        numberOfMonths: 3,
+        dateFormat: "yy-mm-dd",
+        maxDate: "+0D",
+        onClose: function (selectedDate) {
+            $("#from").datepicker("option", "maxDate", selectedDate);
+            syncronizeDates();
+            setTimeout(function () {
+                getRangeData();
+            }, 100);
+        }
+    });
+}
+
+function syncronizeDates() {
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "syncronizeDates",
+            from: $("#from").val(),
+            to: $("#to").val()
+        },
+        type: "GET"
+    }).done(function (data) {
+
+    });
+}
+
+function openToDiv(url, divid) {
+    loading(1);
+    actualURL = url;
+    $.ajax({
+        url: url,
+        data: {
+            ajax: 1
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#" + divid).html(data);
+        $(".button").button();
+        onlineOffline();
+        loading(0);
+    });
+}
+function openPage(url) {
+    loading(1);
+    actualURL = url;
+    $.ajax({
+        url: url,
+        data: {
+            ajax: 1
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#main").html(data);
+        $(".button").button();
+        onlineOffline();
+        window.history.pushState({}, "", url);
+        $.ajax({
+            url: "/getSystemName",
+            type: "GET"
+        }).done(function (data) {
+            $("#laundryName").html(data);
+            loading(0);
+        });
+    });
+}
+
+function send(url) {
+    loading(1);
+    actualURL = url;
+    $.ajax({
+        url: url,
+        data: {
+            ajax: 1
+        },
+        type: "GET"
+    });
+}
+
+function emptyPage() {
+    $("#main").html("");
+}
+function loading(b) {
+    loadingWindow = b;
+}
+
+function isLoadingWindow() {
+    if (loadingWindow == 1) {
+        $("#loading").show();
+    } else {
+        $("#loading").hide();
+    }
+    setTimeout(function () {
+        isLoadingWindow();
+    }, 1000);
+}
+
+function getTodayData(idx) {
+//    console.log("todayData", idx);
+    var dosingDevice = dosingDevices[idx];
+    if (dosingDevice.online == 1) {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "getTodayData",
+                dosingDeviceId: dosingDevice.id,
+                dosingDeviceTypeId: dosingDevice.dosing_device_type_id
+            },
+            type: "GET"
+        }).done(function (data) {
+            reloadPage();
+            setTimeout(function () {
+                getTodayData(idx);
+            }, 30000);
+        });
+    }
+}
+
+function getRangeData() {
+//    console.log("getRangeData");
+    for (var idy = 0; idy < dosingDevices.length; idy++) {
+        var dosingDevice = dosingDevices[idy];
+        if (dosingDevice.online == 1) {
+//            console.log('elotte');
+            $.ajax({
+                url: URL + "ajax.php",
+                data: {
+                    action: "getRangeData",
+                    dosingDeviceId: dosingDevice.id,
+                    dosingDeviceTypeId: dosingDevice.dosing_device_type_id,
+                    from: $("#from").val(),
+                    to: $("#to").val()
+                },
+                type: "GET"
+            }).done(function (data) {
+                reloadPage();
+//                console.log("ajax done");
+            });
+//            console.log("ajax sent");
+        }
+    }
+
+}
+
+function setBatchReportOrderby(name, direction) {
+    url = URL + "index.php?mainObj=report&id=batchReport&orderby=" + name + "&direction=" + direction;
+    openPage(url);
+}
+
+function reloadPage() {
+    if (isUpdate())
+        openPage(actualURL);
+}
+
+function saveConfig(input) {
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveConfig",
+            mainObj: "reportSettings",
+            value: $(input).val(),
+            name: input.name
+        },
+        type: "GET"
+    }).done(function (data) {
+        $(input).addClass("ok");
+        if (input.name == "laundryName") {
+            $.ajax({
+                url: "/getSystemName",
+                type: "GET"
+            }).done(function (data) {
+                $("#laundryName").html(data);
+                loading(0);
+            });
+        }
+        setTimeout(function () {
+            $(input).removeClass("ok");
+        }, 3000);
+    });
+
+}
+
+function isUpdate() {
+    if (actualURL == URL)
+        return false;
+    if (actualURL.match(/\/batch\//) != null)
+        return false;
+    if (actualURL.match(/\/edit/) != null)
+        return false;
+    if (actualURL.match(/reportSettings/) != null)
+        return false;
+    return true;
+}
+
+
+function onSelectDosingDevice() {
+    $("#editButtonDD").removeClass("disabled");
+    $("#delButtonDD").removeClass("disabled");
+    $("#exportButtonDD").removeClass("disabled");
+    $("#showButtonDD").removeClass("disabled");
+}
+
+function editSelectedDosingDevice() {
+    id = $("#dosingDeviceList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "dosingDevices/" + id + "/edit");
+}
+
+function showSelectedDosingDevice() {
+    id = $("#dosingDeviceList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "dosingDevices/" + id + "/show#dosingDevicesTab");
+}
+
+function addDosingDevice() {
+    openPage(URL + "dosingDevices/add/addDosingDevice");
+}
+
+
+function usb() {
+    openPage(URL + "dosingDevices/info/usb");
+}
+
+function removeDosingDevice() {
+    id = $("#dosingDeviceList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "dosingDevices/"+id+"/removeDosingDevice");
+}
+function exportDosingDevice() {
+    id = $("#dosingDeviceList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "dosingDevices/"+id+"/export");
+}
+
+
+function washerLoadTimes() {
+    openPage(URL + "dosingDevices/edit/washerLoadTimes#dosingDevicesTab");
+}
+
+function listDosingDevices() {
+    $("#editButtonDD").addClass("disabled");
+    $("#showButtonDD").addClass("disabled");
+    openPage(URL + 'dosingDevices/');
+}
+
+function listClassifications() {
+    $("#editButtonCL").addClass("disabled");
+    $("#showButtonCL").addClass("disabled");
+    $("#deleteButtonCL").addClass("disabled");
+    openPage(URL + 'classifications/#classificationsTab');
+}
+
+function showSelectedClassification() {
+    id = $("#classificationList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "classifications/" + id + "/show#classificationsTab");
+}
+
+function showdetailedListClassification() {
+    openPage(URL + 'classifications/show/detailedList#classificationsTab');
+}
+
+function syncronize() {
+    $("#layer0").fadeIn();
+    loading(1);
+    actualURL = URL + 'cron/cron.php';
+    $.ajax({
+        url: URL + 'cron/cron.php',
+        data: {
+            ajax: 1
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#main").html(data);
+        $(".button").button();
+        onlineOffline();
+        $("#layer0").fadeOut();
+        loading(0);
+        openPage(URL + 'report#reportTab');
+    });
+    
+}
+
+function onSelectClassification() {
+    var mode = $("#classificationList").children('.ui-selected').attr("mode");
+    if (mode != "step") {
+        $("#editButtonCL").removeClass("disabled");
+    } else {
+        $("#editButtonCL").addClass("disabled");
+    }
+    $("#showButtonCL").removeClass("disabled");
+    $("#deleteButtonCL").removeClass("disabled");
+}
+
+function newClassification() {
+    openPage(URL + 'classifications/newy#classificationsTab');
+}
+
+function editSelectedClassification() {
+    id = $("#classificationList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "classifications/" + id + "/edit#classificationsTab");
+}
+
+function deleteSelectedClassification() {
+    if (confirm('Are you sure you want to delete this classification?')) {
+        id = $("#classificationList").children('.ui-selected').attr("id");
+        if (!id)
+            id = activeId;
+        activeId = id;
+
+        send(URL + "classifications/" + id + "/delete");
+        classificationFilter();
+    }
+}
+
+function classificationFilter() {
+    var filter = $("#filterCL").val();
+    $("#editButtonCL").addClass("disabled");
+    $("#showButtonCL").addClass("disabled");
+    openPage(URL + 'classifications/?filter=' + filter + "#classificationsTab");
+}
+
+function listCustomers() {
+    $("#editButtonCust").addClass("disabled");
+    $("#showButtonCust").addClass("disabled");
+    openPage(URL + 'customers/#customersTab');
+}
+
+function onSelectCustomer() {
+    $("#editButtonCust").removeClass("disabled");
+    $("#showButtonCust").removeClass("disabled");
+}
+
+function newCustomer() {
+    openPage(URL + 'customers/newy#customersTab');
+}
+
+function saveCustomer(id) {
+    var customerName = $("#customerName").val();
+    var customerNum = $("#customerNum").val();
+    var department = $("#department").val();
+    var customerParent = $("#customerParent").val();
+    var action = "save";
+    if (id == "") {
+        action = "insert";
+    }
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: action,
+            mainObj: "customers",
+            customerName: customerName,
+            customerNum: customerNum,
+            customerParent: customerParent,
+            department: department,
+            id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            //TODO
+            alert(data)
+        } else {
+            showStatusWindow('Customer (' + customerName + ') saved.', "Customer saved");
+            openPage(URL + 'customers#customersTab');
+        }
+    });
+}
+
+function showSelectedCustomer() {
+    id = $("#customerList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "customers/" + id + "/show#customersTab");
+}
+
+function editSelectedCustomer() {
+    id = $("#customerList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "customers/" + id + "/edit#customersTab");
+}
+function onUserTypeSelect() {
+    if ($("#type").val() == "CUSTOMER") {
+        $("#customerSelector").fadeIn();
+    } else {
+        $("#customerSelector").fadeOut();
+    }
+}
+
+function listUsers() {
+    $("#editButtonUser").addClass("disabled");
+    $("#showButtonUser").addClass("disabled");
+    $("#deleteButtonUser").removeClass("disabled");
+    openPage(URL + 'users/#usersTab');
+}
+
+function onSelectUser() {
+    $("#editButtonUser").removeClass("disabled");
+    $("#showButtonUser").removeClass("disabled");
+    $("#deleteButtonUser").removeClass("disabled");
+}
+
+function newUser() {
+    openPage(URL + 'users/newy#usersTab');
+}
+
+function saveUser(id) {
+    var username = $("#username").val();
+    var name = $("#name").val();
+    var email = $("#email").val();
+    var phone = $("#phone").val();
+    var passwd = $("#password").val();
+    var confirm = $("#password2").val();
+    var type = $("#type").val();
+    var customer_id = $("#customer_id").val();
+    var action = "save";
+    if (id == "") {
+        action = "insert";
+    }
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: action,
+            mainObj: "users",
+            username: username,
+            name: name,
+            email: email,
+            phone: phone,
+            passwd: passwd,
+            confirm: confirm,
+            type: type,
+            customer_id: customer_id,
+            id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            //TODO
+            alert(data);
+        } else {
+            showStatusWindow('User (' + name + ') saved.', "User saved");
+            listUsers()
+        }
+    });
+}
+
+function deleteUser() {
+    if (confirm('Are you sure you want to delete this user?')) {
+        id = $("#userList").children('.ui-selected').attr("id");
+        $.ajax({
+            url: "/ajax.php",
+            data: {
+                action: "delete",
+                mainObj: "users",
+                id: id
+            },
+            type: "GET"
+        }).done(function (data) {
+            if (data.length > 0) {
+                //TODO
+                alert(data);
+            } else {
+                showStatusWindow('User deleted.', "User deleted");
+                listUsers()
+            }
+        });
+    }
+}
+
+function showSelectedUser() {
+    id = $("#userList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "users/" + id + "/show#usersTab");
+}
+
+function editSelectedUser() {
+    id = $("#userList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "users/" + id + "/edit#usersTab");
+}
+
+
+function newChemical() {
+    //openPage(URL + 'chemicals/newy#chemicalsTab');
+}
+
+
+function listChemicals() {
+    $("#editButtonCH").addClass("disabled");
+    $("#showButtonCH").addClass("disabled");
+    openPage(URL + 'chemicals/#chemicalsTab');
+}
+
+function chemicalGroups() {
+    openPage(URL + 'chemicals/edit/groups/#chemicalsTab');
+}
+
+
+function showSelectedChemical() {
+    id = $("#chemicalList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "chemicals/" + id + "/show#chemicalsTab");
+}
+
+function onSelectChemical() {
+    $("#editButtonCH").removeClass("disabled");
+    $("#showButtonCH").removeClass("disabled");
+}
+
+function editSelectedChemical() {
+    id = $("#chemicalList").children('.ui-selected').attr("id");
+    if (!id)
+        id = activeId;
+    activeId = id;
+    openPage(URL + "chemicals/" + id + "/edit#chemicalsTab");
+}
+
+function chemicalFilter() {
+    var filter = $("#filterCH").val();
+    $("#editButtonCH").addClass("disabled");
+    $("#showButtonCH").addClass("disabled");
+    openPage(URL + 'chemicals/?filter=' + filter + "#chemicalsTab");
+}
+
+function doReport(type) {
+    var reportType = $('#reportSelect').val();
+    var from = $('#from').val().replace("T", " ");
+    var to = $('#to').val().replace("T", " ");
+    var gml = $("#gml").children(':radio:checked').val();
+    loading(1)
+    var parameters = {}
+    customerIds = "All";
+    washExtractorIds = "All";
+    classificationIds = "All";
+    dosingDeviceIds = "All";
+    chemicalIds = "All";
+    switch (reportType) {
+        case "ct":
+
+            cbs = $('.customerCheckbox:checked');
+        
+            if (cbs.length == 0) {
+                alert("No customer selected.");
+                loading(0);
+                return false;
+            }
+
+            var customerIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                customerIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            customerIds += ")";
+
+            
+
+            var cbs = $('.washExtractorCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No washers selected.");
+                loading(0);
+                return false;
+            }
+            var washExtractorIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                washExtractorIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            washExtractorIds += ")";
+            
+            cbs = $('.classificationCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No classification selected.");
+                loading(0);
+                return false;
+            }
+            var classificationIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                classificationIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            classificationIds += ")";
+
+            cbs = $('.dosingDeviceCheckbox:checked');
+            var mcbs = $('.dosingDeviceCheckbox');
+            if (cbs.length == 0 && mcbs.length > 0) {
+                alert("No dosingDevice selected.");
+                loading(0);
+                return false;
+            }
+
+            
+            var dosingDeviceIds = "(" + $(cbs[0]).attr("id").substr(14);
+            for (var i = 1; i < cbs.length; i++) {
+                dosingDeviceIds += ", " + $(cbs[i]).attr("id").substr(14);
+            }
+            dosingDeviceIds += ")";
+            
+            
+            break
+        case "br":
+            cbs = $('.customerCheckbox:checked');
+                
+            if (cbs.length == 0) {
+                alert("No customer selected.");
+                loading(0);
+                return false;
+            }
+
+            var customerIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                customerIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            customerIds += ")";            
+
+            var cbs = $('.washExtractorCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No washers selected.");
+                loading(0);
+                return false;
+            }
+            var washExtractorIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                washExtractorIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            washExtractorIds += ")";
+
+            var cbs = $('.chemicalCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No product selected.");
+                loading(0);
+                return false;
+            }
+            var chemicalIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                chemicalIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            chemicalIds += ")";
+            
+            cbs = $('.classificationCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No classification selected.");
+                loading(0);
+                return false;
+            }
+            var classificationIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                classificationIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            classificationIds += ")";
+
+            cbs = $('.dosingDeviceCheckbox:checked');
+            var mcbs = $('.dosingDeviceCheckbox');
+            if (cbs.length == 0 && mcbs.length > 0) {
+                alert("No dosingDevice selected.");
+                loading(0);
+                return false;
+            }
+
+            
+            var dosingDeviceIds = "(" + $(cbs[0]).attr("id").substr(14);
+            for (var i = 1; i < cbs.length; i++) {
+                dosingDeviceIds += ", " + $(cbs[i]).attr("id").substr(14);
+            }
+            dosingDeviceIds += ")";
+       break
+        case "ds":
+        
+
+            cbs = $('.classificationCheckbox:checked');
+        
+            if (cbs.length == 0) {
+                alert("No classification selected.");
+                loading(0);
+                return false;
+            }
+
+            var classificationIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                classificationIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            classificationIds += ")";
+
+            
+
+            var cbs = $('.washExtractorCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No washers selected.");
+                loading(0);
+                return false;
+            }
+            var washExtractorIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                washExtractorIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            washExtractorIds += ")";
+
+            var cbs = $('.chemicalCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No product selected.");
+                loading(0);
+                return false;
+            }
+            var chemicalIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                chemicalIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            chemicalIds += ")";
+        
+            cbs = $('.dosingDeviceCheckbox:checked');
+            var mcbs = $('.dosingDeviceCheckbox');
+            if (cbs.length == 0 && mcbs.length > 0) {
+                alert("No dosingDevice selected.");
+                loading(0);
+                return false;
+            }
+
+            
+            var dosingDeviceIds = "(" + $(cbs[0]).attr("id").substr(14);
+            for (var i = 1; i < cbs.length; i++) {
+                dosingDeviceIds += ", " + $(cbs[i]).attr("id").substr(14);
+            }
+            dosingDeviceIds += ")";
+       break
+    
+        case "gr":
+            cbs = $('.customerCheckbox:checked');
+            
+            if (cbs.length == 0) {
+                alert("No customer selected.");
+                loading(0);
+                return false;
+            }
+
+            var customerIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                customerIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            customerIds += ")";            
+
+            var cbs = $('.washExtractorCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No washers selected.");
+                loading(0);
+                return false;
+            }
+            var washExtractorIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                washExtractorIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            washExtractorIds += ")";
+
+            var cbs = $('.chemicalCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No product selected.");
+                loading(0);
+                return false;
+            }
+            var chemicalIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                chemicalIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            chemicalIds += ")";
+            
+            cbs = $('.classificationCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No classification selected.");
+                loading(0);
+                return false;
+            }
+            var classificationIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                classificationIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            classificationIds += ")";
+
+            cbs = $('.dosingDeviceCheckbox:checked');
+            var mcbs = $('.dosingDeviceCheckbox');
+            if (cbs.length == 0 && mcbs.length > 0) {
+                alert("No dosingDevice selected.");
+                loading(0);
+                return false;
+            }
+
+            
+            var dosingDeviceIds = "(" + $(cbs[0]).attr("id").substr(14);
+            for (var i = 1; i < cbs.length; i++) {
+                dosingDeviceIds += ", " + $(cbs[i]).attr("id").substr(14);
+            }
+            dosingDeviceIds += ")";
+        break;
+    
+        case "mtbr":
+            
+            cbs = $('.classificationCheckbox:checked');
+        
+            if (cbs.length == 0) {
+                alert("No classification selected.");
+                loading(0);
+                return false;
+            }
+
+            var classificationIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                classificationIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            classificationIds += ")";
+
+            var cbs = $('.washExtractorCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No washers selected.");
+                loading(0);
+                return false;
+            }
+            var washExtractorIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                washExtractorIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            washExtractorIds += ")";
+
+            cbs = $('.dosingDeviceCheckbox:checked');
+            var mcbs = $('.dosingDeviceCheckbox');
+            if (cbs.length == 0 && mcbs.length > 0) {
+                alert("No dosingDevice selected.");
+                loading(0);
+                return false;
+            }
+
+            
+            var dosingDeviceIds = "(" + $(cbs[0]).attr("id").substr(14);
+            for (var i = 1; i < cbs.length; i++) {
+                dosingDeviceIds += ", " + $(cbs[i]).attr("id").substr(14);
+            }
+            dosingDeviceIds += ")";
+        break;
+    
+        case "tbr":
+            cbs = $('.customerCheckbox:checked');
+            
+            if (cbs.length == 0) {
+                alert("No customer selected.");
+                loading(0);
+                return false;
+            }
+
+            var customerIds = "(" + $(cbs[0]).attr("id").substr(9);
+            for (var i = 1; i < cbs.length; i++) {
+                customerIds += ", " + $(cbs[i]).attr("id").substr(9);
+            }
+            customerIds += ")";            
+
+            var cbs = $('.washExtractorCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No washers selected.");
+                loading(0);
+                return false;
+            }
+            var washExtractorIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                washExtractorIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            washExtractorIds += ")";
+
+            cbs = $('.classificationCheckbox:checked');
+            if (cbs.length == 0) {
+                alert("No classification selected.");
+                loading(0);
+                return false;
+            }
+            var classificationIds = "(" + $(cbs[0]).attr("id").substr(15);
+            for (var i = 1; i < cbs.length; i++) {
+                classificationIds += ", " + $(cbs[i]).attr("id").substr(15);
+            }
+            classificationIds += ")";
+
+            cbs = $('.dosingDeviceCheckbox:checked');
+            var mcbs = $('.dosingDeviceCheckbox');
+            if (cbs.length == 0 && mcbs.length > 0) {
+                alert("No dosingDevice selected.");
+                loading(0);
+                return false;
+            }
+
+            
+            var dosingDeviceIds = "(" + $(cbs[0]).attr("id").substr(14);
+            for (var i = 1; i < cbs.length; i++) {
+                dosingDeviceIds += ", " + $(cbs[i]).attr("id").substr(14);
+            }
+            dosingDeviceIds += ")";
+        break;
+ 
+    }
+
+    if (type == "normal") {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "doReport",
+                mainObj: "report",
+                from: from,
+                to: to,
+                gml: gml,
+                reportType: reportType,
+                parameters: parameters,
+               
+            },
+            type: "GET"
+        }).done(function (data) {
+            $("#main").html(data);
+            loading(0)
+        });
+    } else if (type == "PDF") {
+        window.open("/ajax.php?\
+PDF=on\
+&orientation=L\
+&action=doReport\
+&mainObj=report\
+&from=" + from + "\
+&to=" + to + "\
+&gml=" + gml + "\
+&reportType=" + reportType + "\
+&washExtractorIds=" + washExtractorIds + "\
+&classificationIds=" + classificationIds + "\
+&chemicalIds=" + chemicalIds + "\
+&customerIds=" + customerIds + "\
+&dosingDeviceIds=" + dosingDeviceIds);
+        loading(0);
+    } else if (type == "newPage") {
+        window.open("/\
+?action=doReport\
+&mainObj=report\
+&from=" + from + "\
+&to=" + to + "\
+&gml=" + gml + "\
+&reportType=" + reportType + "\
+&washExtractorIds=" + washExtractorIds + "\
+&classificationIds=" + classificationIds + "\
+&chemicalIds=" + chemicalIds + "\
+&customerIds=" + customerIds + "\
+&dosingDeviceIds=" + dosingDeviceIds + "#reportTab");
+        loading(0);
+    } else if (type == "XLS") {
+        window.open("/ajax.php?\n\
+XLS=on\n\
+&action=doReport\
+&mainObj=report\
+&from=" + from + "\
+&to=" + to + "\
+&gml=" + gml + "\
+&reportType=" + reportType + "\
+&washExtractorIds=" + washExtractorIds + "\
+&classificationIds=" + classificationIds + "\
+&chemicalIds=" + chemicalIds + "\
+&customerIds=" + customerIds + "\
+&dosingDeviceIds=" + dosingDeviceIds);
+        loading(0);
+    }
+}
+
+
+function systemCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#system_all').prop('checked', false)
+    }
+}
+
+function alarmCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#alarms_all').prop('checked', false)
+    }
+}
+
+function diagnosticCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#diagnostics_all').prop('checked', false)
+    }
+}
+
+function paramCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#param_all').prop('checked', false)
+    }
+}
+
+
+
+function onAllSystemClick() {
+    if ($('#system_all').is(':checked')) {
+        $('.systemCheckbox').prop("checked", true);
+    } else {
+        $('.systemCheckbox').prop("checked", false);
+    }
+
+}
+function onAllAlarmClick() {
+    if ($('#alarms_all').is(':checked')) {
+        $('.alarmCheckbox').prop("checked", true);
+    } else {
+        $('.alarmCheckbox').prop("checked", false);
+    }
+
+}
+function onAllDiagnosticClick() {
+    if ($('#diagnostics_all').is(':checked')) {
+        $('.diagnosticCheckbox').prop("checked", true);
+    } else {
+        $('.diagnosticCheckbox').prop("checked", false);
+    }
+
+}
+function onAllParamClick() {
+    if ($('#param_all').is(':checked')) {
+        $('.paramCheckbox').prop("checked", true);
+    } else {
+        $('.paramCheckbox').prop("checked", false);
+    }
+
+}
+
+
+function washExtractorCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#wash_extractor_all').prop('checked', false)
+    }
+}
+
+function onAllWashExtractorClick() {
+    if ($('#wash_extractor_all').is(':checked')) {
+        $('.washExtractorCheckbox').prop("checked", true);
+    } else {
+        $('.washExtractorCheckbox').prop("checked", false);
+    }
+
+}
+
+function onAllLabelsClick() {
+    if ($('#labels_all').is(':checked')) {
+        $('.labelCheckbox').prop("checked", true);
+    } else {
+        $('.labelCheckbox').prop("checked", false);
+    }
+
+}
+
+function checkAllFilter(group) {
+    $('.' + group).prop("checked", true);
+}
+
+
+function unCheckAllFilter(group) {
+    $('.' + group).prop("checked", false);
+}
+function classificationCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#classifications_all').prop('checked', false)
+    }
+}
+
+function onAllClassificationClick() {
+    if ($('#classifications_all').is(':checked')) {
+        $('.classificationCheckbox').prop("checked", true);
+    } else {
+        $('.classificationCheckbox').prop("checked", false);
+    }
+}
+
+function onAllChemicalsClick() {
+    if ($('#chemicals_all').is(':checked')) {
+        $('.chemicalCheckbox').prop("checked", true);
+    } else {
+        $('.chemicalCheckbox').prop("checked", false);
+    }
+}
+
+function onAllCustomersClick() {
+    if ($('#customers_all').is(':checked')) {
+        $('.customerCheckbox').prop("checked", true);
+    } else {
+        $('.customerCheckbox').prop("checked", false);
+    }
+}
+function customerCheckboxClick(cb) {
+    id = $(cb).attr("id").substr(9);
+    if ($(cb).is(':checked')) {
+        $(".cb_cust_" + id).prop("checked", true);
+    } else {
+        $(".cb_cust_" + id).prop("checked", false);
+    }
+}
+
+function chemicalCheckboxClick(cb) {
+    if (!$(cb).is(':checked')) {
+        $('#chemicals_all').prop('checked', false)
+    }
+}
+
+function login() {
+    $("#helper").html("loading..")
+    $.ajax({
+        url: "/ajax.php",
+        type: "GET",
+        data: {
+            action: "login",
+            user: $("#user").val(),
+            passwd: $("#passwd").val()
+        }
+    }).done(function (data) {
+        $("#helper").html(data)
+        if (data == "Login OK") {
+            location.reload();
+        }
+    });
+}
+
+function logout() {
+    $.ajax({
+        url: "/ajax.php",
+        type: "GET",
+        data: {
+            action: "logout",
+        }
+    }).done(function (data) {
+        location.href="/";
+    });
+}
+
+function classificationLabels() {
+    openPage(URL + 'classifications/edit/labels#classificationsTab');
+}
+
+function classificationWeight() {
+    openPage(URL + 'classifications/edit/weight#classificationsTab');
+}
+
+
+
+function addClassificationLabel(id) {
+    var label = $("#classificationLabel_" + id).val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "addLabel",
+            mainObj: "classifications",
+            id: id,
+            label: label
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#noLabel" + id).hide();
+            $("#newClassificationLabels_" + id).append(label + ' <a href="#" onclick="deleteLabel(' + id + ', \'' + label + '\'); return false;">x</a><br>');
+            $("#classificationLabel_" + id).val("");
+            $("#classificationLabel_" + id).focus();
+        }
+    });
+}
+
+function classificationPrices() {
+    openPage(URL + 'classifications/edit/prices#classificationsTab');
+}
+
+function classificationTemp() {
+    openPage(URL + 'classifications/edit/temp#classificationsTab');
+}
+function manual() {
+    openPage(URL + 'manual');
+}
+
+function saveClassificationPrice(id) {
+    var price = $("#classificationPrice_" + id).val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "savePrice",
+            mainObj: "classifications",
+            id: id,
+            price: price
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#classificationPrice_" + id).css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#classificationPrice_" + id).css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+
+function saveClassificationWeight(cl_id, we_id) {
+    var weight = $("#classificationWeight_" + cl_id + "_" + we_id).val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveWeight",
+            mainObj: "classifications",
+            cl_id: cl_id,
+            we_id: we_id,
+            weight: weight
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#classificationWeight_" + cl_id + "_" + we_id).css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#classificationWeight_" + cl_id + "_" + we_id).css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+
+function saveDisinfectionTime(id) {
+    var disinfectionTime = $("#disinfectionTime" + id).val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveDisinfectionTime",
+            mainObj: "classifications",
+            id: id,
+            disinfectionTime: disinfectionTime
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#disinfectionTime" + id).css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#disinfectionTime" + id).css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+function saveDisinfectionDegree(id) {
+    var disinfectionDegree = $("#disinfectionDegree" + id).val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveDisinfectionDegree",
+            mainObj: "classifications",
+            id: id,
+            disinfectionDegree: disinfectionDegree
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#classificationPrice_" + id).css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#classificationPrice_" + id).css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+
+function getNewBatches() {
+    $.ajax({
+        url: "/ajax.php",
+        data: {
+            action: "getNewBatches"
+        },
+        dataType: 'json',
+        type: "GET"
+    }).done(function (data) {
+        var htmlString = "<p>" + data.length + " new batches:</p>";
+        for (var i = 0; i < data.length && i < 20; i++) {
+            htmlString += '<p><a href="/batch/' + data[i].id + '/show" onclick="openPage(\'/batch/' + data[i].id + '/show\'); return false;">' + data[i].batch_num + "</a></p>";
+        }
+        $("#newBatches").html(htmlString);
+//		setTimeout(function(){
+//			getNewBatches();
+//		}, 5000);
+    });
+}
+
+
+function bgloading() {
+//	$.ajax({
+//		url: "/isLoading.html",
+//		type: "GET"
+//	}).done(function(data) {
+//		var old = $("#bgloading").html();
+//		if (data == 0 && old == 1)
+//			getNewBatches();
+//		$("#bgloading").html(data);
+//		setTimeout(function() {
+//			bgloading();
+//		}, 500);
+//	});
+}
+
+function setCustomer(batchId) {
+    var customerId = $("#custId").val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveCustomer",
+            mainObj: "batch",
+            batch_id: batchId,
+            cust_id: customerId
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#custId").css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#custId").css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+
+function setNewBatchWeight(batchId) {
+    var newWeight = $("#newWeight").val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveWeight",
+            mainObj: "batch",
+            batch_id: batchId,
+            weight: newWeight
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#newWeight").css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#newWeight").css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+
+function setClassification(batchId) {
+    var clId = $("#clId").val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveClassification",
+            mainObj: "batch",
+            batch_id: batchId,
+            cl_id: clId
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            $("#clId").css("background", "#99ddaa");
+            setTimeout(function () {
+                $("#clId").css("background", "#ffffff");
+            }, 1444);
+        }
+    });
+}
+
+function userFilter() {
+    var filter = $("#filterUser").val();
+    $("#editButtonUser").addClass("disabled");
+    $("#showButtonUser").addClass("disabled");
+    openPage(URL + 'users/?filter=' + filter);
+}
+
+function deleteLabel(clId, label) {
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "deleteLabel",
+            mainObj: "classifications",
+            id: clId,
+            label: label
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (data.length > 0) {
+            alert("'" + data + "'");
+        } else {
+            classificationLabels();
+        }
+    });
+}
+
+function getStringFromDate(d) {
+    var y = d.getFullYear();
+    var m = d.getMonth() + 1;
+    if (m < 10)
+        m = "0" + m;
+    var day = d.getDate();
+    if (day < 10)
+        day = "0" + day;
+    var h = d.getHours();
+    if (h < 10)
+        h = "0" + h;
+    var min = d.getMinutes();
+    if (min < 10)
+        min = "0" + min;
+    var s = d.getSeconds();
+    if (s < 10)
+        s = "0" + s;
+
+    var str = y + "-" + m + "-" + day + "T" + h + ":" + min + ":" + s;
+    return str;
+}
+function setDateInterval(d) {
+    console.log("setDateInterval")
+    if (d == 'td') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+        var toDate = new Date(fromDate.getTime() + 24 * 60 * 60 * 1000);
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'ld') {
+        var toDate = new Date();
+        toDate.setMinutes(0);
+        toDate.setHours(0);
+        toDate.setSeconds(0);
+        var fromDate = new Date(toDate.getTime() - 24 * 60 * 60 * 1000);
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'tw') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+
+        while (fromDate.getDay() > 1 && fromDate.getDay() != 0) {
+            fromDate = new Date(fromDate.getTime() - 24 * 60 * 60 * 1000);
+        }
+        var toDate = new Date(fromDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'lw') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+
+        while (fromDate.getDay() > 1 && fromDate.getDay() != 0) {
+            fromDate = new Date(fromDate.getTime() - 24 * 60 * 60 * 1000);
+        }
+        fromDate = new Date(fromDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+
+        var toDate = new Date(fromDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'tm') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+        fromDate.setDate(1);
+        var toDate = new Date(fromDate.getTime());
+        if (toDate.getMonth() < 11) {
+            toDate.setMonth(toDate.getMonth() + 1);
+        } else {
+            toDate.setMonth(0);
+            toDate.setFullYear(toDate.getFullYear() + 1);
+        }
+        
+
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'lm') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+        fromDate.setDate(1);
+        var toDate = new Date(fromDate.getTime());;
+        if (fromDate.getMonth() > 0) {
+            fromDate.setMonth(fromDate.getMonth()-1)
+        } else {
+            fromDate.setFullYear(fromDate.getFullYear()-1);
+            fromDate.setMonth(11);
+        }
+
+
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'ty') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+        fromDate.setDate(1);
+        fromDate.setMonth(0);
+        var toDate = new Date(fromDate.getTime() + 28 * 24 * 60 * 60 * 1000);
+        toDate.setMonth(11);
+        while (fromDate.getYear() == toDate.getYear()) {
+            toDate = new Date(toDate.getTime() + 24 * 60 * 60 * 1000);
+        }
+
+
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    } else if (d == 'ly') {
+        var fromDate = new Date();
+        fromDate.setMinutes(0);
+        fromDate.setHours(0);
+        fromDate.setSeconds(0);
+        fromDate.setDate(1);
+        fromDate.setMonth(0);
+        var toDate = new Date(fromDate.getTime());
+        fromDate = new Date(fromDate.getTime() - 24 * 60 * 60 * 1000);
+        fromDate.setDate(1);
+        fromDate.setMonth(0);
+
+
+        var strDate = getStringFromDate(fromDate);
+        $("#from").val(strDate);
+        strDate = getStringFromDate(toDate);
+        $("#to").val(strDate);
+    }
+    $("#fyear").html(fromDate.getFullYear());
+    tmp = fromDate.getMonth()+1;
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#fmonth").html(tmp);
+    tmp = fromDate.getDate();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#fday").html(tmp);
+    tmp = fromDate.getHours();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#fhour").html(tmp);
+    tmp = fromDate.getMinutes();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#fminute").html(tmp);
+    tmp = fromDate.getSeconds();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#fsecond").html(tmp);
+
+    $("#tyear").html(toDate.getFullYear());
+    tmp = toDate.getMonth()+1;
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#tmonth").html(tmp);
+    tmp = toDate.getDate();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#tday").html(tmp);
+    tmp = toDate.getHours();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#thour").html(tmp);
+    tmp = toDate.getMinutes();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#tminute").html(tmp);
+    tmp = toDate.getSeconds();
+    if (tmp < 10) tmp = "0" + tmp;
+    $("#tsecond").html(tmp);
+    kellFrissiteni = false;
+    $(
+        $('#fromToDates').data('daterangepicker').setStartDate(fromDate)).ready(function() {
+            $($('#fromToDates').data('daterangepicker').setEndDate(toDate)).ready(function() {kellFrissiteni = true;});
+        })
+    
+    
+    setBDdata();
+    onSelectReport();
+}
+
+function setBDdata() {
+    console.log("setBDdata");
+    
+    $("#bd_count").html("__ batches, __ dosing");
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "getBDdata",
+            from: $("#from").val(),
+            to: $("#to").val()
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#bd_count").html(data);
+        loading('off');
+    });
+}
+
+function disableFilter(type) {
+    $("#" + type + "fh").addClass("disabled");
+    $("#" + type + "fsb").addClass("disabled");
+}
+
+function enableFilter(type) {
+    $("#" + type + "fh").removeClass("disabled");
+    $("#" + type + "fsb").removeClass("disabled");
+}
+
+function resetFilters() {
+    $(".filterBox").html("");
+    $(".filterBox").css("float", "left");
+    console.log("reset Filters");
+}
+
+function loadFilterTo(filterNum, filterType, jobId) {
+    var loadImg = '<img src="/images/chr_loading.gif" width="44" style="text-align:center">';
+        loading('on');
+        $("#filterBox" + filterNum).html(loadImg);
+    var thisJobId = jobId;
+    var from = $('#from').val().replace("T", " ");
+    var to = $('#to').val().replace("T", " ");
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "getFilter",
+            mainObj: "getFilter",
+            from: from,
+            to: to,
+            jobId:jobId,
+            num: filterNum,
+            filterType: filterType
+        },
+        type: "GET"
+    }).done(function (data) {
+        if (jobId == $("#filterJobId").val()) {
+            $("#filterBox" + filterNum).html(data);
+            loading('off');
+        }
+    });
+}
+
+function onSelectReport() {
+    jobId = Math.random()*10000000000000000;
+    $("#filterJobId").val(jobId);
+
+    console.log("onSelectReport");
+    var reportType = $("#reportSelect").val();
+    $(resetFilters()).ready(function() {
+    if (reportType == "al") {//alarms
+
+        return;
+    }
+     /*   if (reportType == "ad") {//all dosing
+            return;
+        }*/
+        if (reportType == "ct") {//Customer Totals
+            loadFilterTo(1, "dosingDeviceFilter", jobId);
+            loadFilterTo(2, "machineFilter", jobId);
+            loadFilterTo(3, "classificationFilter", jobId);
+            loadFilterTo(4, "customerFilter", jobId);
+            //loadFilterTo(5, "productFilter", jobId);
+            return;
+        }
+        if (reportType == "br") {//batch report
+            loadFilterTo(1, "dosingDeviceFilter", jobId);
+            loadFilterTo(2, "machineFilter", jobId);
+            loadFilterTo(3, "classificationFilter", jobId);
+            loadFilterTo(4, "customerFilter", jobId);
+            loadFilterTo(5, "productFilter", jobId);
+            return;
+        }
+        if (reportType == "ds") { // dosing summary
+            loadFilterTo(1, "dosingDeviceFilter", jobId);
+            loadFilterTo(2, "machineFilter", jobId);
+            loadFilterTo(3, "classificationFilter", jobId);
+            //loadFilterTo(4, "customerFilter", jobId);
+            loadFilterTo(5, "productFilter", jobId);
+ 
+            return;
+        }
+        if (reportType == "gr") { // global report
+            loadFilterTo(1, "dosingDeviceFilter", jobId);
+            loadFilterTo(2, "machineFilter", jobId);
+            loadFilterTo(3, "classificationFilter", jobId);
+            loadFilterTo(4, "customerFilter", jobId);
+            loadFilterTo(5, "productFilter", jobId);
+            return;
+        }
+        
+        if (reportType == "mtbr") { // machine total batch report
+            loadFilterTo(1, "dosingDeviceFilter", jobId);
+            loadFilterTo(2, "machineFilter", jobId);
+            loadFilterTo(3, "classificationFilter", jobId);
+            //loadFilterTo(4, "customerFilter", jobId);
+            //loadFilterTo(5, "productFilter", jobId);
+            return;
+        }
+        if (reportType == "tbr") { // total batch report
+            loadFilterTo(1, "dosingDeviceFilter", jobId);
+            loadFilterTo(2, "machineFilter", jobId);
+            loadFilterTo(3, "classificationFilter", jobId);
+            loadFilterTo(4, "customerFilter", jobId);
+            //loadFilterTo(5, "productFilter", jobId);
+ 
+            return;
+        }
+        if (reportType == "el") {
+            openPage('/eventlog/report/index#reportTab');
+            return;
+        }
+    
+        if (reportType == "ww") {
+            openPage('/wastewater/report/index#reportTab');
+            return;
+        }
+    });
+    
+
+}
+
+function displayAutoTriggerNums() {
+    loading('on');
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "getTriggerNums",
+            mainObj: "classifications",
+            dosingDeviceId: $("#dosingDeviceId").val()
+        },
+        type: "GET"
+    }).done(function (data) {
+
+        $("#autoTriggerNums").html(data);
+        loading("off")
+    });
+}
+
+function setRequestOrder(id) {
+    loading('on');
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "setTriggerNums",
+            mainObj: "classifications",
+            requestOrder: $("#requestOrder").val(),
+            id: id
+        },
+        type: "GET"
+    }).done(function (data) {
+        $("#autoTriggerNums").html(data);
+        loading('off');
+    });
+}
+
+function timeRangeToMinutesArray(timeRange) {
+    var timeRangeArray=timeRange.split("-");
+    var ret=[0, 0];
+    var timeArray=timeRangeArray[0].split(":");
+    ret[0] = parseInt(timeArray[0])*60 + parseInt(timeArray[1]);
+    timeArray=timeRangeArray[1].split(":");
+    ret[1] = parseInt(timeArray[0])*60 + parseInt(timeArray[1]);
+    
+    return ret;
+}
+
+function minuteToTime(minute) {
+    var hours=Math.floor(minute/60)
+    if (hours < 10) hours = "0" + hours;
+    var minutes = minute%60;
+    if (hours != 23 && minutes != 59) {
+        minutes=Math.floor(minutes/5)*5;
+    }
+    if (minutes < 10) minutes = "0" + minutes;
+    return hours + ":" + minutes
+}
+
+function setChemicalGroup(cbInput, chemical_id, dosing_group_id) {
+    
+    if($(cbInput).is(':checked')) {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "insertChemicalDosingGroup",
+                mainObj: "chemicals",
+                chemical_id: chemical_id,
+                dosing_group_id: dosing_group_id
+            },
+            type: "GET"
+        });
+    } else {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "deleteChemicalDosingGroup",
+                mainObj: "chemicals",
+                chemical_id: chemical_id,
+                dosing_group_id: dosing_group_id
+            },
+            type: "GET"
+        });
+    }
+}
+
+function setDisinfection(cl_id, d_id, cbox) {
+    if($(cbox).is(':checked')) {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "insertClassificationDisinfection",
+                mainObj: "classifications",
+                classification_id: cl_id,
+                disinfection_id: d_id
+            },
+            type: "GET"
+        });
+    } else {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "deleteClassificationDisinfection",
+                mainObj: "classifications",
+                classification_id: cl_id,
+                disinfection_id: d_id
+            },
+            type: "GET"
+        });
+    }
+}
+
+function insertDisinfection() {
+    var disinfection_name=$("#disinfection_name").val();
+    var disinfection_degree = $("#degree").val();
+    var disinfection_time = $("#mins").val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "insertDisinfection",
+            mainObj: "classifications",
+            disinfection_degree:disinfection_degree,
+            disinfection_name:disinfection_name,
+            disinfection_time:disinfection_time
+        },
+        type: "GET"
+    });
+    location.reload();
+}
+function deleteDisinfection(disinfection_id) {
+    if (confirm('Are you sure you want to delete this disinfection?')) {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "deleteDisinfection",
+                mainObj: "classifications",
+                disinfection_id: disinfection_id
+            },
+            type: "GET"
+        }).done(function() {
+            document.location.reload();
+        });
+    }
+}
+function modify_we_temp_param(washer_id, param_type, input) {
+    var val=$(input).val();
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "insertWEData",
+            mainObj: "classifications",
+            washer_id: washer_id,
+            param_type: param_type,
+            val: val
+        },
+        type: "GET"
+    });
+}
+function saveLoadingtime(input, machine_id) {
+    var val=$(input).val();
+    
+    $.ajax({
+        url: URL + "ajax.php",
+        data: {
+            action: "saveLoadingtime",
+            mainObj: "dosingDevices",
+            washer_id: machine_id,
+            loading_time: val
+        },
+        type: "GET"
+    }).done(function(data) {
+        $(input).css("background", "#99ddaa");
+        setTimeout(function () {
+            $(input).css("background", "#ffffff");
+        }, 1444);
+    });
+}
+
+
+function isLoggedOut(initial) {
+    $.ajax({
+        url: URL + "isLoggedIn",
+        type: "GET"
+    }).done(function(data) {
+        if(data == '1') {
+            setTimeout(function () {isLoggedOut(0)}, 10000);
+        } else {
+            if (initial == 0) {
+                window.location.reload();
+            }
+        }
+
+    });
+}
+
+function updateDosingDeviceInfo(ddid) {
+    $.ajax({
+        url: URL + "dosingDevices/" + ddid + "/getInfo",
+        type: "GET",
+        dataType: 'json'
+    }).done(function(data) {
+        $("#status_" + ddid).html(data.status);
+        $("#lastEvent_" + ddid).html(data.lastEvent);
+        $("#lastSynch_" + ddid).html(data.autosynch_date);
+        $("#updatedAt_" + ddid).html(data.updated_at);
+        $("#updatedAt_" + ddid).html(data.updated_at);
+        setTimeout(function() {updateDosingDeviceInfo(ddid)}, 500);
+    });
+}
+
+
+function SynchStatus() {
+    $.ajax({
+        url: URL + "synchStatus",
+        type: "GET",
+    }).done(function(data) {
+        if (data == 1) {
+            $("#SynchStatus").html("Running");
+        }
+        if (data == -1) {
+            $("#SynchStatus").html("Paused");
+        }
+        if (data == 2) {
+            $("#SynchStatus").html("Sleeping");
+        }
+        if (data == 3) {
+            $("#SynchStatus").html("Stopped");
+        }
+        setTimeout(function() {SynchStatus()}, 700);
+    });
+}
+
+function doEventlogReport(ddid) {
+    var day=$("#eventlog_" + ddid).val();
+    openPage("/eventlog/" + ddid + "/report/" + day + "/show");
+}
+
+
+function filterEvents(exportType="") {
+    var loadImg = '<img src="/images/chr_loading.gif" width="44" style="text-align:center">';
+    $("#eventTable").html(loadImg);
+    var cbs = $('.systemCheckbox:checked');
+    var systemCodes = "";
+    if (cbs.length > 0) {
+        systemCodes = $(cbs[0]).attr("id").substr(7);
+        for (var i = 1; i < cbs.length; i++) {
+            systemCodes += "|" + $(cbs[i]).attr("id").substr(7);
+        }
+    }
+    
+    cbs = $('.alarmCheckbox:checked');
+    
+    var alarmCodes="";
+    if (cbs.length > 0) {
+        alarmCodes = $(cbs[0]).attr("id").substr(6);
+        for (var i = 1; i < cbs.length; i++) {
+            alarmCodes += "|" + $(cbs[i]).attr("id").substr(6);
+        }
+    }
+
+    cbs = $('.diagnosticCheckbox:checked');
+    
+    var diagnosticCodes = "";
+    if (cbs.length > 0) {
+        diagnosticCodes = $(cbs[0]).attr("id").substr(11);
+        for (var i = 1; i < cbs.length; i++) {
+            diagnosticCodes += "|" + $(cbs[i]).attr("id").substr(11);
+        }
+    }
+
+    cbs = $('.paramCheckbox:checked');
+    var paramCodes = "";
+    if (cbs.length > 0) {
+        paramCodes =$(cbs[0]).attr("id");
+        for (var i = 1; i < cbs.length; i++) {
+            paramCodes += "|" + $(cbs[i]).attr("id");
+        }
+    }
+
+    var allParams = $("#param_all").is(':checked')
+    var pieces=$("#pieces").val();
+    var date = $("#date").val();
+    time = "";
+    var h=$("#hour").val(); 
+    if (h.length < 2) time += "0";
+    time += h;
+    time += ":";
+    var m=$("#minute").val(); 
+    if (m.length < 2) time += "0";
+    time += m;
+    time += ":";
+    var s=$("#second").val(); 
+    if (s.length < 2) time += "0";
+    time += s;
+    if (exportType == '') {
+        $.ajax({
+            url: URL + "ajax.php",
+            data: {
+                action: "listEvents",
+                mainObj: "eventlog",
+                id: $("#dosingDeviceId").val(),
+                systemCodes:systemCodes,
+                alarmCodes:alarmCodes,
+                diagnosticCodes:diagnosticCodes,
+                paramCodes:paramCodes,
+                date:date,
+                time:time,
+                pieces:pieces,
+                allParams:allParams,
+                exportType:exportType
+            },
+            type: "GET",
+        }).done(function(data) {
+            $("#eventTable").html(data);
+        });
+    } else {
+        if (exportType == "xls") {
+            url="/ajax.php?action=listEvents&mainObj=eventlog&id=" + encodeURI($("#dosingDeviceId").val()) + encodeURI("&systemCodes=") + encodeURI(systemCodes) + encodeURI("&alarmCodes=") + encodeURI(alarmCodes) +
+            encodeURI("&diagnosticCodes=") + encodeURI(diagnosticCodes) + encodeURI("&paramCodes=") + encodeURI(paramCodes) + encodeURI("&date=") + encodeURI(date) + encodeURI("&time=") + encodeURI(time) + encodeURI("&pieces=") + encodeURI(pieces) + encodeURI("&allParams=") +
+            encodeURI(allParams) + encodeURI("&exportType=") + encodeURI(exportType)
+            window.open(url, "_blank");
+
+        }
+
+        if (exportType == "pdf") {
+            url="/ajax.php?action=listEvents&mainObj=eventlog&PDF=on&orientation=L&id=" + encodeURI($("#dosingDeviceId").val()) + encodeURI("&systemCodes=") + encodeURI(systemCodes) + encodeURI("&alarmCodes=") + encodeURI(alarmCodes) +
+            encodeURI("&diagnosticCodes=") + encodeURI(diagnosticCodes) + encodeURI("&paramCodes=") + encodeURI(paramCodes) + encodeURI("&date=") + encodeURI(date) + encodeURI("&time=") + encodeURI(time) + encodeURI("&pieces=") + encodeURI(pieces) + encodeURI("&allParams=") +
+            encodeURI(allParams) + encodeURI("&exportType=") + encodeURI(exportType)
+            window.open(url, "_blank");
+
+        }
+    }
+    
+}
+
+function fyearPlusBtnClick() {
+    var fromDate = new Date($("#from").val());
+    fromDate.setFullYear(fromDate.getFullYear()+1);
+    var strDate = getStringFromDate(fromDate);
+    $("#from").val(strDate);
+    $("#fyear").html(fromDate.getFullYear());
+    console.log(fromDate);
+}
+function fyearMinusBtnClick() {
+    var fromDate = new Date($("#from").val());
+    fromDate.setFullYear(fromDate.getFullYear()-1);
+    var strDate = getStringFromDate(fromDate);
+    $("#from").val(strDate);
+    $("#fyear").html(fromDate.getFullYear());
+    console.log(fromDate);
+}
+
+function setFromAndTo() {
+    console.log("setFromAndTo")
+    var fromDate = new Date($("#fromToDates").val().split("\tto\t")[0].split(" ").join("T"));
+    var toDate = new Date($("#fromToDates").val().split("\tto\t")[1].split(" ").join("T"));
+    var strDate = getStringFromDate(fromDate);
+    $("#from").val(strDate);
+    var strDate = getStringFromDate(toDate);
+    $("#to").val(strDate);
+    if (kellFrissiteni) {
+        setBDdata();
+        onSelectReport();
+    }
+}
+
+function wastewaterReport(select) {
+    loading(1)
+    date=$("select").val();
+    $(".toHideTitle").hide();
+    openToDiv("/wastewater/0/report/"+date, "report");
+}
+
+function isUpdate() {
+    $.ajax({
+        url: URL + "var/isUpdate?" + Math.random(),
+        type: "GET",
+    }).done(function(data) {
+        if (data == 1) {
+            $.ajax({
+                url: URL + "setUpdate0",
+                type: "GET",
+            }).done(function(data) {
+                location.reload();
+            });
+        }
+    });
+    
+    setTimeout(function() {isUpdate();}, 5000);
+}

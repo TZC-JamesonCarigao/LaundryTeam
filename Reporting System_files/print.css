@@ -1,0 +1,580 @@
+* {
+    font-family: Helvetica, sans-serif;
+	margin:0px;
+}
+
+table.top td {
+    vertical-align: top;
+    padding-top:10px;
+
+}
+table.top td table {
+    margin:2%;
+    width:96%;
+}
+
+
+header {
+    text-align: right;
+    padding:5px;
+    height:100px;
+    border-bottom: 1px solid #344b8f;
+    display:none;
+}
+
+#logo {
+    background: url(../images/abacus-logo.png);
+    width:220px;
+    height:100px;
+    float: left;
+}
+
+body {
+    padding:5px;
+    font-family: sans-serif;
+}
+
+#menu {
+    text-align: left;
+    position: absolute;
+    left:221px;
+	top:0px;
+    background: white;
+    display: none;
+}
+
+#menu ul {
+    list-style: none;
+    margin:0;
+    padding:0;
+}
+
+a {
+    text-decoration:none;
+    color:#344b8f;
+}
+
+a:hover {
+    color:#6da54a;
+    text-decoration:underline;
+}
+#menu ul.main li a {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+#menu ul.sub1 li a {
+    font-weight: normal;
+    font-size: 16px;
+}
+
+#menu ul.sub1 {
+    margin-left:10px;
+}
+
+#menu ul.sub2 li a {
+    font-size: 14px;
+}
+#menu ul.sub2 {
+    margin-left:20px;
+}
+
+#main {
+    padding:5px;
+}
+nav {
+    display: none;
+}
+
+footer {
+    padding:5px;
+    clear: both;
+    font-size: 9px;
+    text-align:center;
+    border-top: 1px solid #344b8f;
+}
+
+table {
+    font-size: 12px;
+}
+.blueBackground {
+    background: #344b8f;
+    color:#fff;
+}
+
+.blueBackground a{
+    color:#fff;
+}
+
+.greenBackground {
+    background: #6da54a;
+}
+
+tr.row1 {
+    background:#f0f9eb;
+}
+
+span.ipici {
+    font-size: 8px;
+    float:right;
+}
+
+h1 {
+    font-size: 20px;
+    color:#344b8f;
+    text-align: center;
+}
+h2 {
+    font-size: 16px;
+    color:#344b8f;
+    text-align: center;
+    font-style: italic;
+}
+
+.header2 {
+    font-size: 16px;
+    color:#344b8f;
+    font-style: italic;
+}
+
+h1.inTable {
+    margin:0px;
+}
+
+
+input, select, textarea {
+    border:1px solid #344b8f;
+    background-color:#f4feff;
+    text-align:center;
+    padding: 5px;
+    width:150px;
+}
+
+textarea {
+	height:100px;
+	text-align: left;
+}
+select {
+    width:162px;
+}
+
+option {
+    text-align: center;
+}
+
+a.button:hover {
+    text-decoration: none;
+}
+
+
+table.list {
+    padding :10px 30px;
+    min-width:70%;
+    border-collapse:collapse;
+    border:1px solid #344b8f;
+    
+}
+table.list th.firstth {
+    
+}
+
+table.list th.lastth {
+    
+}
+
+table.list tr.firsttr {
+    border:0px solid #344b8f;
+}
+
+table.list th {
+    padding:5px;
+}
+table.list tr.lasttr {
+    border-bottom: 1px solid #344b8f;
+}
+
+table.list td {
+    padding: 3px 7px;
+}
+
+table.list tr:hover td {
+    background: #D3FFB8;
+}
+
+table.edit, table.show {
+    border: 1px solid #344b8f;
+    padding:20px;
+    
+}
+
+table.show th, table.show td {
+    padding:5px;
+}
+
+.right {
+    text-align:right;
+}
+
+span.feljebb {
+    position:relative;
+    bottom:40px;
+    float:right;
+}
+
+tr.row1 td.col1, tr.row1 td.col3, tr.row1 td.col5, tr.row1 td.col7, tr.row1 td.col9,
+tr.row1 td.col11, tr.row1 td.col13, tr.row1 td.col15, tr.row1 td.col17, tr.row1 td.col19 {
+
+}
+tr.row0 td.col1, tr.row0 td.col3, tr.row0 td.col5, tr.row0 td.col7, tr.row0 td.col9,
+tr.row0 td.col11, tr.row0 td.col13, tr.row0 td.col15, tr.row0 td.col17, tr.row0 td.col19 {
+
+}
+
+a.closeAndOpen {
+    font-size: 16px;
+    color:#344b8f;
+    text-align: center;
+    font-weight: bold;
+}
+
+table.bordercollapse tr.greenBackground {
+    background:transparent;
+}
+
+table.bordercollapse tr.greenBackground td {
+    border-top:1px solid #6da54a;
+    border-bottom:1px solid #344b8f;
+    background: #eeefff;
+}
+
+h1.error {
+    border:1px solid #ef2929;
+    background: #fedddd;
+    color:#cc0101;
+    margin: auto;
+    width:300px;
+    padding: 10px 5px;
+    float:left;
+}
+
+#loading {
+    position:fixed;
+    top:40px;
+    right:230px;
+    padding:20px;
+    background:#fff;
+    border:1px solid #344b8f;
+    
+    display:none;
+}
+
+
+td.washing {
+    background:#bcd5e6;
+    border-left:2px solid #344b8f;
+    border-right: 2px solid #344b8f;
+}
+
+td.start{
+    
+    border-top:2px solid #344b8f;
+}
+
+td.stop {
+    border-bottom:2px solid #344b8f;
+}
+
+td.ures, th.ures {
+    padding:0px;
+    width:5px;
+}
+
+td.alarm {
+    color:#ef2929;
+}
+
+td.grey {
+    color:#aaa;
+}
+
+input.ok {
+    background:#aaffdd;
+}
+
+.onoffImageSpan {
+    margin-bottom: -4px;
+}
+
+td.sum {
+    background:#d6ecc9;
+}
+
+td.sumsum {
+    background:#bddca9;
+}
+
+div.lapozo {
+    font-size:12px;
+    text-align:center;
+    margin-top:10px;
+}
+
+div.topMenuBox {
+	float:left;
+	padding:5px;
+	border:1px solid #aaaaaa;
+	
+	width:50px;
+	height:50px;
+	text-align:center;
+	font-size: 12px;
+	margin:2px;
+	margin-bottom:0px;
+	cursor:pointer;
+}
+
+div.topMenuBox:hover{
+	border:1px solid #afafaf;
+	background:#bddca9;
+
+}
+
+div.topMenuBox.disabled{
+	color:#eee;
+	background:#ddd;
+	cursor:default;
+}
+div.topMenuBigbox {
+	width:100px;
+}
+
+div.topMenuBox.right {
+	float:right;
+}
+.topMenuselect {
+	margin-top:5px;
+	width:90px;
+}
+
+.lista {
+	width:500px;
+	margin-left:100px;
+}
+
+.lista li {
+	padding:3px;
+	margin:2px;
+	list-style: none;
+	display: block;
+	margin:auto;
+	border:2px dotted transparent;
+	cursor:pointer;
+}
+
+.lista li:hover {
+	border-color:#6da54a
+}
+
+.lista li.ui-selecting {
+	border:2px dotted #aaa;
+}
+.lista li.ui-selected {
+	border:2px dotted #344b8f;
+	background: #344b8f;
+	color:#fff;
+}
+
+.lista li.ui-selected:hover {
+	border:2px dotted #344b8f;
+}
+
+.filterInput {
+	width:75px;
+	height: 10px;
+	font-size: 10px;
+}
+
+
+.topMenuBox select {
+	padding:0px;
+	width:125px;
+	
+}
+
+.dateSelector {
+	padding:0px;
+	width:80px;
+	
+	border:0px solid #101;
+	background:transparent;
+}
+
+.selectableBox label, selectableBox input {
+	display: inline;
+}
+
+#gml .ui-button-text {
+	padding:2px 3px;
+	width:15px;
+}
+nav .ui-button-text {
+	padding:0px;
+	margin:0px;
+}
+
+nav .button {
+	margin-top:20px;
+	margin-left: -1px;
+	padding:0px;
+}
+
+.selectableBox {
+	text-align: left;
+	background: #fff;
+	width:148px;
+	height:55px;
+	border:1px solid #777;
+	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+.selectableBox input {
+	width: 10px;
+	height:15px;
+	padding:0px;
+}
+
+.inputDiv {
+	margin:5px; padding:3px;
+}
+
+#userBox {
+	float:right;
+	padding:5px;
+	border-bottom:1px solid #344b8f;
+	border-left: 1px solid #344b8f;
+	
+}
+
+hr {
+	background-color: #344b8f;
+	height: 1px;
+	border: 0; 
+}
+
+tr.bold td {
+	font-weight: bold;
+}
+
+#newBatches {
+	position: fixed;
+	left:0px;
+	top:115px;
+	bottom:0px;
+	border-top:1px solid #344b8f;
+	border-right:1px solid #344b8f;
+	
+	padding: 5px;
+	background:#fff;
+}
+
+#bgloading {
+	position: fixed;
+	right:0px;
+	top:115px;
+	bottom:0px;
+	border-top:1px solid #344b8f;
+	border-left:1px solid #344b8f;
+	
+	padding: 5px;
+	background:#fff;
+}
+
+#tartalom {
+	font-size: 12px;
+}
+
+#manualTxt h1 {
+    font-size: 24px;
+    color:#344b8f;
+    text-align: left;
+	margin:20px;
+}
+
+#manualTxt h2 {
+    font-size: 20px;
+    color:#344b8f;
+    text-align: left;
+	margin:10px;
+	margin-left:30px;
+	font-style: normal;
+}
+
+#manualTxt h3 {
+    font-size: 16px;
+    color:#344b8f;
+    text-align: left;
+	margin:5px;
+	margin-left:40px;
+}
+
+#manualTxt .p1 {
+	margin-left:30px;
+	text-align: justify;
+}
+
+#manualTxt .p2 {
+	margin-left:40px;
+	text-align: justify;
+}
+
+#manualTxt .p3 {
+	margin-left:50px;
+	text-align: justify;
+}
+
+.vocabularyBox {
+	margin:10px;
+}
+
+.vocabularyWord {
+	font-weight: bold;
+}
+
+.vocabularyDescription {
+	margin-left: 10px;
+}
+
+#newBatches, nav, #bgloading, #userBox, .noPrint{
+	display:none;
+}
+
+table.list tr td {
+	background:#fff;
+}
+
+th, th.first, th.last {
+	color:#000;
+	font-weight: bold;
+}
+
+th.blueBackground {
+	color:#fff;
+}
+
+.justPrint {
+	display: inline;
+}
+
+#version {
+    display:none;
+}
+
+main {
+    margin-top: 0px;
+    border-top: 0px;
+}
+
+.diagnostic {
+    display: none;
+}

@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<!-- saved from url=(0299)http://192.168.22.23/?action=doReport&mainObj=report&from=2025-03-03%2000:00:00&to=2025-03-04%2000:00:00&gml=g&reportType=br&washExtractorIds=(1,%202,%203,%204)&classificationIds=(1,%202,%204,%205,%206,%208,%209)&chemicalIds=(3,%204,%205,%206,%208,%209)&customerIds=(0)&dosingDeviceIds=(1)#reportTab -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <!--header.tpl-->
+<meta name="description" content="Abacus reporting">
+<meta name="keywords" content="Abacus reporting">
+<link rel="icon" href="http://192.168.22.23/favicon.ico" type="image/gif" sizes="16x16">
+
+<title>Reporting System</title>
+<meta name="author" content="davv">
+<script type="text/javascript" src="./Reporting System_files/jquery-1.10.2.js.download" charset="UTF-8"></script>
+<script type="text/javascript" src="./Reporting System_files/jquery-ui-1.10.4.custom.js.download" charset="UTF-8"></script>
+<script type="text/javascript" src="./Reporting System_files/app.js.download" charset="UTF-8"></script>
+
+<link rel="stylesheet" type="text/css" media="all" href="./Reporting System_files/jquery-ui-1.10.4.custom.css">
+<link rel="stylesheet" type="text/css" media="all" href="./Reporting System_files/style.css">
+<link rel="stylesheet" type="text/css" media="print" href="./Reporting System_files/print.css">
+
+<!--[if lt IE 9]><script language="javascript" type="text/javascript" src="excanvas.js"></script><![endif]-->
+<script language="javascript" type="text/javascript" src="./Reporting System_files/jquery.jqplot.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.dateAxisRenderer.min.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.cursor.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.canvasOverlay.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.canvasTextRenderer.min.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.CategoryAxisRenderer.min.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.BarRenderer.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.pointLabels.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.logAxisRenderer.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.canvasAxisLabelRenderer.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.CanvasAxisTickRenderer.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.pieRenderer.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.enhancedPieLegendRenderer.js.download"></script>
+<script type="text/javascript" src="./Reporting System_files/jqplot.donutRenderer.js.download"></script>
+<link rel="stylesheet" type="text/css" href="./Reporting System_files/jquery.jqplot.css">
+<!--/header.tpl-->
+    </head>
+    <body data-new-gr-c-s-check-loaded="14.1224.0" data-gr-ext-installed="" style="">
+        
+								<header>
+				<!--head.tpl-->
+<div id="logo">
+    
+</div>
+<div id="loading" style="display: none;"><img src="./Reporting System_files/chr_loading.gif" width="44"></div>
+<div id="dateRange">
+  
+    
+</div>
+    
+    
+<!--/head.tpl-->
+			</header>
+
+			<nav> 
+				<!--nav.tpl-->
+
+<div id="SynchStatus" style="position:absolute; right:5px; top:5px;z-index:1002; font-size:12px;">Sleeping</div>
+
+<script>
+SynchStatus();
+</script>
+<div id="menu" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
+	<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" role="tablist">
+					<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="dosingDevicesTab" aria-labelledby="ui-id-1" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#dosingDevicesTab" onclick="listDosingDevices(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-1">Dosing devices</a></li>
+							<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="classificationsTab" aria-labelledby="ui-id-2" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#classificationsTab" onclick="listClassifications(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-2">Classifications</a></li>
+							<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="chemicalsTab" aria-labelledby="ui-id-3" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#chemicalsTab" onclick="listChemicals(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-3">Products</a></li>
+					<li class="ui-state-default ui-corner-top ui-tabs-active ui-state-active" role="tab" tabindex="0" aria-controls="reportTab" aria-labelledby="ui-id-4" aria-selected="true"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#reportTab" onclick="openPage(&#39;/report#reportTab&#39;); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-4">Report</a></li>
+			<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="settingsTab" aria-labelledby="ui-id-5" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#settingsTab" onclick="openPage(&#39;/reportSettings#settingsTab&#39;); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-5">Settings</a></li>
+			<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="customersTab" aria-labelledby="ui-id-6" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#customersTab" onclick="listCustomers(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-6">Customers</a></li>
+					<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="usersTab" aria-labelledby="ui-id-7" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#usersTab" onclick="listUsers(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-7">Users</a></li>
+					<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="manualTab" aria-labelledby="ui-id-8" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#manualTab" onclick="manual(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-8">Downloads</a></li>
+			<li class="ui-state-default ui-corner-top" role="tab" tabindex="-1" aria-controls="logoutTab" aria-labelledby="ui-id-9" aria-selected="false"><a href="http://192.168.22.23/?action=doReport&amp;mainObj=report&amp;from=2025-03-03%2000:00:00&amp;to=2025-03-04%2000:00:00&amp;gml=g&amp;reportType=br&amp;washExtractorIds=(1,%202,%203,%204)&amp;classificationIds=(1,%202,%204,%205,%206,%208,%209)&amp;chemicalIds=(3,%204,%205,%206,%208,%209)&amp;customerIds=(0)&amp;dosingDeviceIds=(1)#logoutTab" onclick="logout(); return false;" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-9">Logout</a></li>
+	</ul>
+			<div id="dosingDevicesTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-1" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+			<div id="listButtonDD" class="topMenuBox" onclick="runIfNotDisabled(listDosingDevices, this)">
+	<img src="./Reporting System_files/list_32.png">
+	List
+</div>
+
+
+<div id="addButtonDD" class="topMenuBox" onclick="runIfNotDisabled(addDosingDevice, this)">
+	<img src="./Reporting System_files/add_32.png">
+	Add
+</div>
+
+<div id="addButtonDD" class="topMenuBox" onclick="runIfNotDisabled(usb, this)">
+	<img src="./Reporting System_files/usb-icon.png" width="32">
+	USB
+</div>
+
+
+		</div>
+				<div id="classificationsTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-2" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+			<div id="listButtonCL" class="topMenuBox" onclick="runIfNotDisabled(listClassifications, this)" title="List all Classifications">
+	<img src="./Reporting System_files/list_32.png">
+	List
+</div>
+<div id="editButtonCL" class="topMenuBox disabled" onclick="runIfNotDisabled(editSelectedClassification, this)" title="Edit the selected classification">
+	<img src="./Reporting System_files/edit_32.png">
+	Edit
+</div>
+<div id="showButtonCL" class="topMenuBox disabled" onclick="runIfNotDisabled(showSelectedClassification, this)" title="Show the selected classification">
+	<img src="./Reporting System_files/show_32.png">
+	Show
+</div>
+<div id="deleteButtonCL" class="topMenuBox disabled" onclick="runIfNotDisabled(deleteSelectedClassification, this)" title="Delete selected classification">
+	<img src="./Reporting System_files/recycle_32.png">
+	Delete
+</div>
+<div id="addButtonCL" class="topMenuBox" onclick="runIfNotDisabled(newClassification, this)" title="Insert new relay or auto trigger mode classification">
+	<img src="./Reporting System_files/add_32.png">
+	Add
+</div>
+
+<div id="labelButtonCL" class="topMenuBox" onclick="runIfNotDisabled(classificationWeight, this)" title="Set up the default weights for each classification per machine">
+	<img src="./Reporting System_files/weight.png">
+	Weight
+</div>
+	<div id="priceButtonCL" class="topMenuBox" onclick="runIfNotDisabled(classificationPrices, this)" title="Set up price for each classification">
+		<img src="./Reporting System_files/price_32.png">
+		Prices
+	</div>
+	<div id="priceButtonCL" class="topMenuBox" onclick="runIfNotDisabled(classificationTemp, this)" title="Set up the pH, temperature and disinfection parameters for each classifications">
+		<img src="./Reporting System_files/temp_32.png">
+		pH and T
+	</div>
+<div id="showButtonCL" class="topMenuBox" onclick="runIfNotDisabled(showdetailedListClassification, this)" title="Show a list of listed classifications">
+	<img src="./Reporting System_files/show_32.png">
+	Show All
+</div>
+<div id="listButtonCL" class="topMenuBox topMenuBigbox right">
+	<input id="filterCL" class="filterInput" type="text" placeholder="Filter" onkeyup="runIfNotDisabled(classificationFilter, this)">
+</div>
+
+		</div>
+				<div id="chemicalsTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-3" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+			<div id="listButtonCH" class="topMenuBox" onclick="runIfNotDisabled(listChemicals, this)" title="List all chemical products">
+	<img src="./Reporting System_files/list_32.png">
+	List
+</div>
+<div id="editButtonCH" class="topMenuBox disabled" onclick="runIfNotDisabled(editSelectedChemical, this)" title="Edit the selected chemical product">
+	<img src="./Reporting System_files/edit_32.png">
+	Edit
+</div>
+<div id="showButtonCH" class="topMenuBox disabled" onclick="runIfNotDisabled(showSelectedChemical, this)" title="Show the selected chemical product">
+	<img src="./Reporting System_files/show_32.png">
+	Show
+</div>
+
+	<div id="listButtonCH" class="topMenuBox topMenuBigbox right">
+	<input id="filterCH" class="filterInput" type="text" placeholder="Filter" onkeyup="runIfNotDisabled(chemicalFilter, this)">
+</div>
+
+		</div>
+		<div id="reportTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-4" role="tabpanel" aria-expanded="true" aria-hidden="false">
+		
+	</div>
+	<div id="settingsTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-5" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+		<div id="listButtonDD" class="topMenuBox" onclick="runIfNotDisabled(listMailSettings, this)">
+	<img src="./Reporting System_files/envelope.png" width="32">
+	Email
+</div>
+<div id="layer0" style="display:none; width:100%; height:100%; background:rgba(0,0,0,0.5); position:fixed; top:0px; left:0px; z-index:999"></div>
+	</div> 
+		<div id="customersTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-6" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+			<div id="listButtonCust" class="topMenuBox" onclick="runIfNotDisabled(listCustomers, this)" title="List all customers">
+	<img src="./Reporting System_files/list_32.png">
+	List
+</div>
+<div id="editButtonCust" class="topMenuBox disabled" onclick="runIfNotDisabled(editSelectedCustomer, this)" title="Edit the selected customer">
+	<img src="./Reporting System_files/edit_32.png">
+	Edit
+</div>
+<div id="showButtonCust" class="topMenuBox disabled" onclick="runIfNotDisabled(showSelectedCustomer, this)" title="Show the selected customer">
+	<img src="./Reporting System_files/show_32.png">
+	Show
+</div>
+<div id="addButtonCust" class="topMenuBox" onclick="runIfNotDisabled(newCustomer, this)" title="Insert new customer">
+	<img src="./Reporting System_files/add_32.png">
+	Add
+</div>
+	<div id="listButtonCust" class="topMenuBox topMenuBigbox right">
+	<input id="filterCust" class="filterInput" type="text" placeholder="Filter" onkeyup="runIfNotDisabled(customerFilter, this)">
+</div>
+
+		</div>
+			<div id="usersTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-7" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+			<div id="listButtonUser" class="topMenuBox" onclick="runIfNotDisabled(listUsers, this)">
+	<img src="./Reporting System_files/list_32.png">
+	Lista
+</div>
+<div id="editButtonUser" class="topMenuBox disabled" onclick="runIfNotDisabled(editSelectedUser, this)">
+	<img src="./Reporting System_files/edit_32.png">
+	Edit
+</div>
+<div id="showButtonUser" class="topMenuBox disabled" onclick="runIfNotDisabled(showSelectedUser, this)">
+	<img src="./Reporting System_files/show_32.png">
+	Show
+</div>
+<div id="addButtonUser" class="topMenuBox" onclick="runIfNotDisabled(newUser, this)">
+	<img src="./Reporting System_files/add_32.png">
+	Add
+</div>
+<div id="deleteButtonUser" class="topMenuBox disabled" onclick="runIfNotDisabled(deleteUser, this)">
+	<img src="./Reporting System_files/recycle_32.png">
+	Delete
+</div>
+	<div id="listButtonUser" class="topMenuBox topMenuBigbox right">
+	<input id="filterUser" class="filterInput" type="text" placeholder="Filter" onkeyup="runIfNotDisabled(userFilter, this)">
+</div>
+
+		</div>
+		<div id="manualTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-8" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+	</div>
+	<div id="logoutTab" class="tab ui-tabs-panel ui-widget-content ui-corner-bottom" aria-labelledby="ui-id-9" role="tabpanel" aria-expanded="false" aria-hidden="true" style="display: none;">
+	</div>
+        
+</div>
+        
+<!--/nav.tpl-->
+			</nav>
+						<main>
+									<div id="userBox">
+						Logged in: <a href="http://192.168.22.23/users/15/edit">Donal</a><br>
+						<span id="laundryName">Laundryteam Fluxcomp</span>
+					</div>
+					<div id="version">
+						V3.4.8.14
+						
+					</div>
+								<div id="main">
+											<div>
+	<table>
+		<tbody><tr>
+						<td>
+				<table>
+					<tbody><tr>
+						<th align="left">Report type:</th>
+						<td style="font-style: italic; padding-right: 20px;">Batches</td>
+					</tr>
+					<tr>
+						<th align="left">Report start:</th>
+						<td style="font-style: italic; padding-right: 20px;">2025-03-03 00:00:00</td>
+					</tr>
+					<tr>
+						<th align="left">Report end:</th>
+						<td style="font-style: italic; padding-right: 20px;">2025-03-04 00:00:00</td>
+					</tr>
+											<tr>
+							<th align="left">Machines:</th>
+							<td style="font-style: italic; padding-right: 20px;">
+																	All machines
+															</td>
+						</tr>
+																<tr>
+							<th align="left">Classifications:</th>
+							<td style="font-style: italic; padding-right: 20px;">
+																	All classifications
+															</td>
+						</tr>
+																<tr>
+							<th align="left">Products:</th>
+							<td style="font-style: italic; padding-right: 20px;">
+																	All chemicals
+															</td>
+						</tr>
+																<tr>
+							<th align="left">Customers:</th>
+							<td style="font-style: italic; padding-right: 20px;">
+																	All customers
+															</td>
+						</tr>
+																<tr>
+							<th align="left">Devices:</th>
+							<td style="font-style: italic; padding-right: 20px;">
+																	All Devices
+															</td>
+						</tr>
+										<tr>
+						<th align="left">Generated at:</th>
+						<td style="font-style: italic; padding-right: 20px;">2025-03-04 10:54:23</td>
+					</tr>	
+				</tbody></table>
+			</td>
+		</tr>
+	</tbody></table>
+</div>
+
+
+<center><h1 style="margin:20px 10px;">Batches</h1>
+				<table align="center" class="list">
+			<tbody><tr class="firsttr">
+				<th class="blueBackground col1 firstth">Batch id</th>
+				<th class="blueBackground col1 ">Time</th>
+				<th class="blueBackground col1 ">Duration</th>
+				<th class="blueBackground col2">Alarms</th>
+				<th class="blueBackground col3">Machine</th>
+				<th class="blueBackground col4">Classification</th>
+				<th class="blueBackground col4">Triggers</th>
+				<th class="blueBackground col5">Device</th>
+									<th class="blueBackground col7">ABP Cost</th>
+					<th class="blueBackground col7">Dosage Cost</th>
+												<th class="blueBackground col6">Weight</th>
+				<th class="blueBackground col8">Dosings</th>
+				<th class="blueBackground col7">pH</th>
+				<th class="blueBackground col7" title="Temperature disinfection">Temp. Dis.</th>
+				<th class="blueBackground col7" title="Temperature disinfection">Temp. Range</th>
+				<th class="blueBackground col8 lastth">Customer</th>
+			</tr>
+											<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8024/" target="_blank">2603030940</a></td>
+																																																
+										<td class="col1">2025-03-03&nbsp;15:09:17&nbsp;-&nbsp;09:00:44&nbsp;</td>
+					<td class="right">17h&nbsp;51'&nbsp;27</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;7&nbsp;(7)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">4.46&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="9 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8023/" target="_blank">2503024890</a></td>
+																																																
+										<td class="col1">2025-03-03&nbsp;14:48:55&nbsp;-&nbsp;07:52:51&nbsp;</td>
+					<td class="right">17h&nbsp;03'&nbsp;56</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;3&nbsp;(3)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.50&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="2 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8025/" target="_blank">2403034550</a></td>
+																																																
+										<td class="col1">2025-03-03&nbsp;15:45:28&nbsp;-&nbsp;07:52:51&nbsp;</td>
+					<td class="right">16h&nbsp;07'&nbsp;23</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;2&nbsp;(2)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																					<span style="color:#00aa00;" title="0 / 0">✔</span>
+																						
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8022/" target="_blank">2403023945</a></td>
+																																																
+										<td class="col1">2025-03-03&nbsp;14:39:29&nbsp;-&nbsp;15:41:11&nbsp;</td>
+					<td class="right">1h&nbsp;01'&nbsp;42</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;2&nbsp;(2)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.90&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="3 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8021/" target="_blank">2303020446</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;14:04:52&nbsp;-&nbsp;14:41:18&nbsp;</td>
+					<td class="right">36'&nbsp;26</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.1&nbsp;60Kg&nbsp;(1)</td>
+
+					<td class="col4">Classification&nbsp;4&nbsp;(4)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8019/" target="_blank">2403013949</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;13:39:10&nbsp;-&nbsp;14:19:26&nbsp;</td>
+					<td class="right">40'&nbsp;16</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;4&nbsp;(4)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8020/" target="_blank">2503014744</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;13:47:26&nbsp;-&nbsp;14:17:18&nbsp;</td>
+					<td class="right">29'&nbsp;52</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;1&nbsp;(1)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.86&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8018/" target="_blank">2603012010</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;13:20:25&nbsp;-&nbsp;13:56:17&nbsp;</td>
+					<td class="right">35'&nbsp;52</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;3&nbsp;(3)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.60&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="3 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8017/" target="_blank">2303010891</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;13:08:30&nbsp;-&nbsp;13:47:08&nbsp;</td>
+					<td class="right">38'&nbsp;38</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.1&nbsp;60Kg&nbsp;(1)</td>
+
+					<td class="col4">Classification&nbsp;4&nbsp;(4)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8015/" target="_blank">2403124383</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;12:43:11&nbsp;-&nbsp;13:24:33&nbsp;</td>
+					<td class="right">41'&nbsp;22</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;4&nbsp;(4)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8016/" target="_blank">2503010044</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;13:00:58&nbsp;-&nbsp;13:24:33&nbsp;</td>
+					<td class="right">23'&nbsp;35</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;2&nbsp;(2)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8014/" target="_blank">2603122657</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;12:26:07&nbsp;-&nbsp;12:59:29&nbsp;</td>
+					<td class="right">33'&nbsp;22</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;1&nbsp;(1)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.86&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8013/" target="_blank">2303121115</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;12:11:33&nbsp;-&nbsp;12:47:50&nbsp;</td>
+					<td class="right">36'&nbsp;17</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.1&nbsp;60Kg&nbsp;(1)</td>
+
+					<td class="col4">Classification&nbsp;3&nbsp;(3)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.60&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="3 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8011/" target="_blank">2403114279</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;11:42:13&nbsp;-&nbsp;12:30:41&nbsp;</td>
+					<td class="right">48'&nbsp;28</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;7&nbsp;(7)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.27&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8012/" target="_blank">2503120841</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;12:08:23&nbsp;-&nbsp;12:30:37&nbsp;</td>
+					<td class="right">22'&nbsp;14</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;2&nbsp;(2)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.01&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8010/" target="_blank">2603112966</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;11:29:49&nbsp;-&nbsp;12:05:42&nbsp;</td>
+					<td class="right">35'&nbsp;53</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;1&nbsp;(1)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.86&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8009/" target="_blank">2503110972</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;11:09:41&nbsp;-&nbsp;11:47:11&nbsp;</td>
+					<td class="right">37'&nbsp;30</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;4&nbsp;(4)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8008/" target="_blank">2303105821</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;10:58:37&nbsp;-&nbsp;11:46:17&nbsp;</td>
+					<td class="right">47'&nbsp;40</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.1&nbsp;60Kg&nbsp;(1)</td>
+
+					<td class="col4">Classification&nbsp;7&nbsp;(7)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.27&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8007/" target="_blank">2603104786</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;10:47:15&nbsp;-&nbsp;11:19:13&nbsp;</td>
+					<td class="right">31'&nbsp;58</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;7&nbsp;(7)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.21&nbsp;€</td>
+																				<td class="col6 right">34&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8006/" target="_blank">2403104013</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;10:40:20&nbsp;-&nbsp;11:11:59&nbsp;</td>
+					<td class="right">31'&nbsp;39</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;6&nbsp;(6)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.91&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8004/" target="_blank">2503100060</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;10:00:51&nbsp;-&nbsp;10:47:30&nbsp;</td>
+					<td class="right">46'&nbsp;39</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;5&nbsp;(5)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.51&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="6 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8003/" target="_blank">2303094915</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;09:49:10&nbsp;-&nbsp;10:42:53&nbsp;</td>
+					<td class="right">53'&nbsp;43</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.1&nbsp;60Kg&nbsp;(1)</td>
+
+					<td class="col4">Classification&nbsp;7&nbsp;(7)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.27&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8005/" target="_blank">2603100769</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;10:07:23&nbsp;-&nbsp;10:38:23&nbsp;</td>
+					<td class="right">31'&nbsp;00</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;7&nbsp;(7)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.21&nbsp;€</td>
+																				<td class="col6 right">34&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8002/" target="_blank">2403093189</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;09:31:31&nbsp;-&nbsp;09:57:06&nbsp;</td>
+					<td class="right">25'&nbsp;35</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;6&nbsp;(6)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.91&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8001/" target="_blank">2603090781</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;09:07:17&nbsp;-&nbsp;09:44:24&nbsp;</td>
+					<td class="right">37'&nbsp;07</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;2&nbsp;(2)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/8000/" target="_blank">2503085687</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;08:56:24&nbsp;-&nbsp;09:39:10&nbsp;</td>
+					<td class="right">42'&nbsp;46</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;5&nbsp;(5)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.51&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="6 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/7999/" target="_blank">2403082740</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;08:27:08&nbsp;-&nbsp;08:59:50&nbsp;</td>
+					<td class="right">32'&nbsp;42</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;6&nbsp;(6)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.91&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="5 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/7995/" target="_blank">2303072034</a></td>
+																																																
+										<td class="col1">2025-03-03&nbsp;07:20:57&nbsp;-&nbsp;08:51:12&nbsp;</td>
+					<td class="right">1h&nbsp;30'&nbsp;15</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.1&nbsp;60Kg&nbsp;(1)</td>
+
+					<td class="col4">Classification&nbsp;5&nbsp;(5)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">2.85&nbsp;€</td>
+																				<td class="col6 right">30&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="8 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/7997/" target="_blank">2503074465</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;07:44:16&nbsp;-&nbsp;08:38:15&nbsp;</td>
+					<td class="right">53'&nbsp;59</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.3&nbsp;60kg&nbsp;(3)</td>
+
+					<td class="col4">Classification&nbsp;4&nbsp;(4)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">1.00&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="4 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row1">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/7998/" target="_blank">2603075431</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;07:54:08&nbsp;-&nbsp;08:31:08&nbsp;</td>
+					<td class="right">37'&nbsp;00</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Unimac&nbsp;47&nbsp;(4)</td>
+
+					<td class="col4">Classification&nbsp;1&nbsp;(1)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.96&nbsp;€</td>
+																				<td class="col6 right">30&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="3 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+															<tr class="row0 lasttr">
+					<td class="col1 first right" style="font-family:courier"><a href="http://192.168.22.23/batch/7996/" target="_blank">2403072925</a></td>
+																									
+										<td class="col1">2025-03-03&nbsp;07:29:43&nbsp;-&nbsp;08:07:47&nbsp;</td>
+					<td class="right">38'&nbsp;04</td>
+										<td class="col2 right">0</td>
+					<td class="col3">Tolon&nbsp;No.&nbsp;2&nbsp;60kg&nbsp;(2)</td>
+
+					<td class="col4">Classification&nbsp;3&nbsp;(3)</td>
+					<td></td>
+					<td class="col5">Laundryteam&nbsp;Fluxcomp</td>
+											<td class="col7 right">0.00&nbsp;€</td>
+						<td class="col7 right">0.60&nbsp;€</td>
+																				<td class="col6 right">35&nbsp;kg</td>
+										
+					<td class="col7 right">
+																												<span style="color:#ff5555;" title="3 / 0">✖</span>
+															
+												
+					</td>
+					
+					
+					<td class="col7 right">
+																									<span style="color:#aaaa55;"> - </span>
+											</td>
+					
+					
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+
+					<td class="col7 right">
+																												<span style="color:#aaaa55;"> - </span>
+													</td>
+																																																																																										
+										<td class="col7 right">
+						
+							No customer&nbsp;(0) 
+																	</td>
+										
+				</tr>
+									</tbody></table>
+		
+		<br>		<!--/batches.list.tpl-->
+</center>
+									</div>
+				<div id="statusWindow">
+
+				</div>
+				<div id="newBatches"><p>8053 new batches:</p><p><a href="http://192.168.22.23/batch/1/show" onclick="openPage(&#39;/batch/1/show&#39;); return false;">2309115691</a></p><p><a href="http://192.168.22.23/batch/2/show" onclick="openPage(&#39;/batch/2/show&#39;); return false;">2309014448</a></p><p><a href="http://192.168.22.23/batch/3/show" onclick="openPage(&#39;/batch/3/show&#39;); return false;">2309024884</a></p><p><a href="http://192.168.22.23/batch/4/show" onclick="openPage(&#39;/batch/4/show&#39;); return false;">2310062532</a></p><p><a href="http://192.168.22.23/batch/5/show" onclick="openPage(&#39;/batch/5/show&#39;); return false;">2310080525</a></p><p><a href="http://192.168.22.23/batch/6/show" onclick="openPage(&#39;/batch/6/show&#39;); return false;">2310093534</a></p><p><a href="http://192.168.22.23/batch/7/show" onclick="openPage(&#39;/batch/7/show&#39;); return false;">2310102939</a></p><p><a href="http://192.168.22.23/batch/8/show" onclick="openPage(&#39;/batch/8/show&#39;); return false;">2310112464</a></p><p><a href="http://192.168.22.23/batch/9/show" onclick="openPage(&#39;/batch/9/show&#39;); return false;">2310122520</a></p><p><a href="http://192.168.22.23/batch/10/show" onclick="openPage(&#39;/batch/10/show&#39;); return false;">2310012611</a></p><p><a href="http://192.168.22.23/batch/11/show" onclick="openPage(&#39;/batch/11/show&#39;); return false;">2310022255</a></p><p><a href="http://192.168.22.23/batch/12/show" onclick="openPage(&#39;/batch/12/show&#39;); return false;">2313072457</a></p><p><a href="http://192.168.22.23/batch/13/show" onclick="openPage(&#39;/batch/13/show&#39;); return false;">2313085650</a></p><p><a href="http://192.168.22.23/batch/14/show" onclick="openPage(&#39;/batch/14/show&#39;); return false;">2313095713</a></p><p><a href="http://192.168.22.23/batch/15/show" onclick="openPage(&#39;/batch/15/show&#39;); return false;">2313105717</a></p><p><a href="http://192.168.22.23/batch/16/show" onclick="openPage(&#39;/batch/16/show&#39;); return false;">2313115946</a></p><p><a href="http://192.168.22.23/batch/17/show" onclick="openPage(&#39;/batch/17/show&#39;); return false;">2313012054</a></p><p><a href="http://192.168.22.23/batch/18/show" onclick="openPage(&#39;/batch/18/show&#39;); return false;">2314073059</a></p><p><a href="http://192.168.22.23/batch/19/show" onclick="openPage(&#39;/batch/19/show&#39;); return false;">2314082515</a></p><p><a href="http://192.168.22.23/batch/20/show" onclick="openPage(&#39;/batch/20/show&#39;); return false;">2314093765</a></p></div>
+				<div id="bgloading">x</div>
+			</main>
+			<footer>
+				<!--footer.tpl-->
+
+<!--/footer.tpl--><br>
+				
+			</footer>
+			
+
+</body><div><template shadowrootmode="closed"><div><main><div class="sc-1uwbbvd-0 cTwtgP"></div></main><style data-styled="active" data-styled-version="6.1.12"></style></div></template></div><grammarly-desktop-integration data-grammarly-shadow-root="true"><template shadowrootmode="open"><style>
+      div.grammarly-desktop-integration {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select:none;
+        user-select:none;
+      }
+
+      div.grammarly-desktop-integration:before {
+        content: attr(data-content);
+      }
+    </style><div aria-label="grammarly-integration" role="group" tabindex="-1" class="grammarly-desktop-integration" data-content="{&quot;mode&quot;:&quot;full&quot;,&quot;isActive&quot;:true,&quot;isUserDisabled&quot;:false}"></div></template></grammarly-desktop-integration></html>
