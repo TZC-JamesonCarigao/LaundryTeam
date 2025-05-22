@@ -747,9 +747,9 @@ def import_excel_data(request):
 
     try:
         # Define paths
-        driver_path = 'drivers/chromedriver.exe'  # Adjust if needed
+        driver_path = '/LaundryTeam/LaundryApp/bin/chromedriver.exe'  # Adjust if needed
         local_html_path = os.path.abspath(
-            'C:/Users/ADMIN/Documents/TZC/LaundryTeam-main/LaundryTeam-main/Reporting System.html'
+            'C:/Users/ADMIN/Documents/LaundryTeam/Reporting System.html'
         )
         html_url = f"file:///{local_html_path.replace(os.sep, '/')}"
 

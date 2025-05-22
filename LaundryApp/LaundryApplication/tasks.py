@@ -11,6 +11,13 @@ import logging
 import threading
 from .models import MeterData
 
+# Add these imports at the top of the file if not already present
+import os
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+import time
+
 logger = logging.getLogger(__name__)
 
 class MeterDataFetcher:
@@ -547,7 +554,7 @@ class ScheduleManager:
     
     def switch_network(self, schedule_id, ssid, is_secondary=False):
         """Switch to the specified network as part of a schedule"""
-        logger.info(f"Schedule {schedule_id}: Switching to {'secondary' if is_secondary else 'primary'} network: {ssid}")
+        logger.info(f"Schedule {schedule_id}: Preparing to switch to {'secondary' if is_secondary else 'primary'} network: {ssid}")
         
         # Find the db_schedule object
         schedule_data = self.active_schedules.get(schedule_id)
@@ -560,11 +567,23 @@ class ScheduleManager:
             logger.error(f"Database schedule object not found for schedule {schedule_id}")
             return False
         
+        # Log that we're starting the switch process
+        network_type = "secondary" if is_secondary else "primary"
+        pre_log_message = f"Preparing to switch to {network_type} network: {ssid} (waiting 10 seconds)"
+        ConnectionLog.objects.create(
+            message=pre_log_message,
+            is_success=True
+        )
+        logger.info(pre_log_message)
+        
+        # Delay for 10 seconds before switching
+        logger.info(f"Waiting 10 seconds before switching to {ssid}...")
+        time.sleep(10)
+        
         # Switch network
         success, message = self.connection_manager.connect_to_network(ssid)
         
         # Log the switch attempt
-        network_type = "secondary" if is_secondary else "primary"
         if success:
             log_message = f"Switched to {network_type} network: {ssid}"
             ConnectionLog.objects.create(
@@ -572,6 +591,10 @@ class ScheduleManager:
                 is_success=True
             )
             logger.info(log_message)
+            
+            # If switching to secondary network, fetch HTML data
+            if is_secondary and success:
+                self.fetch_html_data()
         else:
             log_message = f"Failed to switch to {network_type} network {ssid}: {message}"
             ConnectionLog.objects.create(
@@ -582,6 +605,147 @@ class ScheduleManager:
         
         return success
     
+    def fetch_html_data(self):
+        """Fetch data from HTML file after switching to secondary network"""
+        try:
+            logger.info("Starting to fetch data from HTML file")
+            ConnectionLog.objects.create(
+                message="Starting data fetch from HTML file",
+                is_success=True
+            )
+            
+            from selenium import webdriver
+            from selenium.webdriver.chrome.service import Service
+            from django.db import connection
+            import os
+            import pandas as pd
+            import time
+            
+            # Define paths
+            driver_path = '/LaundryTeam/LaundryApp/bin/chromedriver.exe'  # Adjust if needed
+            local_html_path = os.path.abspath(
+                'C:/Users/ADMIN/Documents/LaundryTeam/Reporting System.html'
+            )
+            
+            if not os.path.exists(local_html_path):
+                error_msg = f"HTML file not found at {local_html_path}"
+                logger.error(error_msg)
+                ConnectionLog.objects.create(
+                    message=error_msg,
+                    is_success=False
+                )
+                return False
+            
+            html_url = f"file:///{local_html_path.replace(os.sep, '/')}"
+            
+            # Start Selenium browser
+            try:
+                service = Service(driver_path)
+                browser = webdriver.Chrome(service=service)
+                browser.get(html_url)
+                time.sleep(5)  # Let the page fully load
+                
+                # Extract table using pandas
+                tables = pd.read_html(browser.page_source)
+                browser.quit()
+            except Exception as browser_error:
+                error_msg = f"Error opening HTML with browser: {str(browser_error)}"
+                logger.error(error_msg, exc_info=True)
+                ConnectionLog.objects.create(
+                    message=error_msg,
+                    is_success=False
+                )
+                return False
+            
+            if not tables:
+                error_msg = "No table found in HTML report"
+                logger.error(error_msg)
+                ConnectionLog.objects.create(
+                    message=error_msg,
+                    is_success=False
+                )
+                return False
+                
+            df = tables[0]  # Use first table only
+            logger.info(f"Successfully read HTML file. Found {len(df)} rows in table")
+            
+            # Validate columns
+            expected_columns = [
+                'DATE', 'Washing Machine', 'PROGRAM', 'TIME TO FILL', 'TOTAL TIME', 
+                'ELEC', 'WATER 1', 'WATER 2', 'GAS', 'CHEMICAL', 'COST PER KW', 
+                'GAS COST', 'Water cost', 'TOTAL'
+            ]
+            
+            for col in expected_columns:
+                if col not in df.columns:
+                    error_msg = f"Missing column in HTML: {col}"
+                    logger.error(error_msg)
+                    ConnectionLog.objects.create(
+                        message=error_msg,
+                        is_success=False
+                    )
+                    return False
+            
+            # Process data and save to database
+            from ..models import DisplayData
+            
+            # Track counts for logging
+            records_added = 0
+            records_skipped = 0
+            
+            # Get existing dates to avoid duplicates
+            existing_dates = set(DisplayData.objects.values_list('date', flat=True))
+            existing_dates = {str(d) for d in existing_dates}
+            
+            # Process each row
+            for _, row in df.iterrows():
+                date_str = str(row['DATE'])
+                
+                # Skip if already exists
+                if date_str in existing_dates:
+                    records_skipped += 1
+                    continue
+                
+                try:
+                    # Create new record in database
+                    DisplayData.objects.create(
+                        date=date_str,
+                        washing_machine=row.get('Washing Machine', ''),
+                        program=row.get('PROGRAM', None),
+                        time_to_fill=row.get('TIME TO FILL', None),
+                        total_time=row.get('TOTAL TIME', None),
+                        elec=row.get('ELEC', None),
+                        water_1=row.get('WATER 1', None),
+                        water_2=row.get('WATER 2', None),
+                        gas=row.get('GAS', None),
+                        chemical=row.get('CHEMICAL', None),
+                        cost_per_kw=row.get('COST PER KW', None),
+                        gas_cost=row.get('GAS COST', None),
+                        water_cost=row.get('Water cost', None),
+                        total=row.get('TOTAL', None)
+                    )
+                    records_added += 1
+                    existing_dates.add(date_str)
+                except Exception as row_error:
+                    logger.error(f"Error adding row: {str(row_error)}")
+            
+            success_message = f"Imported {records_added} records from HTML ({records_skipped} skipped as duplicates)"
+            logger.info(success_message)
+            ConnectionLog.objects.create(
+                message=success_message,
+                is_success=True
+            )
+            return True
+                
+        except Exception as e:
+            error_msg = f"Error fetching HTML data: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            ConnectionLog.objects.create(
+                message=error_msg,
+                is_success=False
+            )
+            return False
+
     def ensure_running(self):
         """Make sure the scheduler is running in its own thread"""
         if not self.running or not self.thread or not self.thread.is_alive():

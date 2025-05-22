@@ -66,4 +66,7 @@ urlpatterns = [
 
     # New debug WiFi endpoint
     path('api/debug-wifi/', api_views.debug_current_wifi, name='debug_wifi'),
+
+    # Add new endpoint for connection logs
+    path('api/connection-logs/', api_views.get_connection_logs, name='connection_logs'),
 ]

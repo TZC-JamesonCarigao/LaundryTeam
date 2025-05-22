@@ -660,3 +660,27 @@ def debug_current_wifi(request):
         return JsonResponse({
             'error': str(e)
         })
+
+@require_http_methods(["GET"])
+def get_connection_logs(request):
+    """API endpoint to get the most recent connection logs"""
+    try:
+        # Get the 50 most recent logs
+        logs = ConnectionLog.objects.order_by('-timestamp')[:50]
+        
+        # Convert to a list of dictionaries
+        log_data = []
+        for log in logs:
+            log_data.append({
+                'id': log.id,
+                'timestamp': log.timestamp.isoformat(),
+                'message': log.message,
+                'is_success': log.is_success
+            })
+            
+        return JsonResponse(log_data, safe=False)
+    except Exception as e:
+        logger.error(f"Error fetching connection logs: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)

@@ -185,6 +185,10 @@
         top: 130px;
         width: 300px;
         height: 50px;
+        cursor: pointer; /* Ensure cursor shows as pointer */
+        z-index: 100; /* Ensure button is above other elements */
+        opacity: 1 !important; /* Ensure button is visible */
+        pointer-events: auto !important; /* Ensure button receives click events */
     }
     
     .switching-duration {
@@ -717,6 +721,7 @@
         
         // Schedule management functions
         function toggleSchedule() {
+            console.log("Toggle schedule clicked, current state:", scheduleRunning);
             if (scheduleRunning) {
                 stopSchedule();
             } else {
@@ -802,13 +807,24 @@
             });
         }
 
-        // Enhanced function to toggle schedule status
-        function toggleSchedule() {
-            if (scheduleRunning) {
-                stopSchedule();
-            } else {
-                startSchedule();
-            }
+        // Fix for button click event
+        function initializeEventListeners() {
+            console.log("Initializing button event listeners...");
+            // Remove any existing listeners first
+            startButton.removeEventListener('click', toggleSchedule);
+            switchTimeInput.removeEventListener('change', updateScheduleInfo);
+            revertTimeInput.removeEventListener('change', updateScheduleInfo);
+            
+            // Add fresh event listeners
+            switchTimeInput.addEventListener('change', updateScheduleInfo);
+            revertTimeInput.addEventListener('change', updateScheduleInfo);
+            startButton.addEventListener('click', toggleSchedule);
+            
+            // Make sure button is enabled
+            startButton.disabled = false;
+            startButton.style.pointerEvents = 'auto';
+            startButton.style.opacity = '1';
+            console.log("Button event listener attached:", startButton);
         }
         
         // Check schedule status immediately and periodically
@@ -861,6 +877,9 @@
                         // Ensure UI shows schedule is not running
                         updateScheduleUI(false);
                     }
+                    
+                    // Also refresh logs whenever we check status
+                    refreshLogs();
                 })
                 .catch(error => {
                     console.error('Error checking schedule status:', error);
@@ -977,13 +996,21 @@
 
         // Initialize the page
         populateWifiDropdowns().then(() => {
+            // Initialize event listeners after dropdowns are populated
+            initializeEventListeners();
+            
             // Check server-side schedule status after networks are loaded
             checkScheduleStatus();
             
             // Check status periodically to keep UI in sync with server
             setInterval(checkScheduleStatus, 30000); // Check every 30 seconds
         });
+        
         updateScheduleInfo();
+        initializeEventListeners(); // Initialize event listeners immediately as well
+        
+        // Schedule periodic log refreshes
+        setInterval(refreshLogs, 10000); // Refresh logs every 10 seconds
     });
 
     // Add debugging helper
@@ -1001,6 +1028,44 @@
             debugResult.textContent = `Error: ${err.message}`;
         }
     });
+    
+    // Enhance the log refresh functionality to show the latest logs
+    function refreshLogs() {
+        fetch('/api/connection-logs/')
+            .then(response => response.json())
+            .then(logs => {
+                const logTableBody = document.querySelector('.log-table tbody');
+                if (!logTableBody) return;
+                
+                // Clear existing logs
+                logTableBody.innerHTML = '';
+                
+                // Add new logs
+                logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    
+                    // Format timestamp
+                    const timestamp = new Date(log.timestamp).toLocaleString();
+                    
+                    // Set the row content
+                    row.innerHTML = `
+                        <td>${timestamp}</td>
+                        <td>${log.message}</td>
+                        <td>
+                            ${log.is_success ? 
+                            '<span class="badge badge-success">Success</span>' : 
+                            '<span class="badge badge-danger">Error</span>'}
+                        </td>
+                    `;
+                    
+                    // Add the new row to the table
+                    logTableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching logs:', error);
+            });
+    }
 </script>
 
 {% endblock %}
