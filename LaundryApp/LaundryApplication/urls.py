@@ -19,7 +19,11 @@ urlpatterns = [
     path('users/', views.users, name='users'),
     path('downloads/', views.downloads, name='downloads'),
     path('meter-data/', views.meter_data, name='meter_data'),
-    path('utility-costs/', utility_costs, name='utility_costs'),
+    path('utility_costs/', views.utility_costs, name='utility_costs'),
+    path('utility_costs/add/', views.utility_costs_add, name='utility_costs_add'),
+    path('utility_costs/edit/<int:id>/', views.utility_costs_edit, name='utility_costs_edit'),
+    path('utility_costs/delete/<int:id>/', views.utility_costs_delete, name='utility_costs_delete'),
+    
     
     # Authentication routes
     path('login/', views.CustomLoginView.as_view(), name='login'),
@@ -41,6 +45,7 @@ urlpatterns = [
 
     # API endpoints for WiFi switching and Excel import
     path('api/saved-networks/', api_views.get_saved_networks, name='get_saved_networks'),
+    path('api/available-saved-networks/', api_views.get_available_saved_networks, name='get_available_saved_networks'),
     path('api/switch-network/', views.switch_network, name='switch_network'),
     path('api/import-excel-data/', views.import_excel_data, name='import_excel_data'),
 

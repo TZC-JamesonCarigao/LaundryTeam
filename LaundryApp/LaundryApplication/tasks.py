@@ -217,33 +217,61 @@ class WiFiConnectionManager:
             
             # First, check if there's any WiFi interface
             if "There is no wireless interface on the system." in result.stdout:
-                print("Debug: No wireless interface detected")
-                return None
+                logger.warning("No wireless interface detected")
+                return None  # Changed from "No_Wireless_Interface"
                 
             # More robust regex that handles different formats and line endings
-            match = re.search(r'SSID\s*:\s*(.*?)[\r\n]', result.stdout)
-            if match and match.group(1).strip():
-                self.current_ssid = match.group(1).strip()
-                self.last_verified = timezone.now()
-                # Print for debugging
-                print(f"Debug: Detected SSID: '{self.current_ssid}'")
-                return self.current_ssid
-            else:
-                # Try alternative regex in case the format is different
-                match = re.search(r'SSID\s+:\s+(.*?)[\r\n]', result.stdout)
+            ssid_patterns = [
+                r'SSID\s*:\s*(.*?)[\r\n]',
+                r'SSID\s+:\s+(.*?)[\r\n]',
+                r'Profile\s*:\s*(.*?)[\r\n]'
+            ]
+            
+            for pattern in ssid_patterns:
+                match = re.search(pattern, result.stdout)
                 if match and match.group(1).strip():
                     self.current_ssid = match.group(1).strip()
                     self.last_verified = timezone.now()
-                    print(f"Debug: Detected SSID (alt method): '{self.current_ssid}'")
+                    logger.info(f"Detected SSID: '{self.current_ssid}'")
                     return self.current_ssid
                     
+            # If no match is found, try using an alternative approach
+            try:
+                # Try alternative command
+                alt_result = subprocess.run(['netsh', 'wlan', 'show', 'state'],
+                                          capture_output=True, text=True, check=True)
+                match = re.search(r'SSID\s*:?\s*(.*?)[\r\n]', alt_result.stdout)
+                if match and match.group(1).strip():
+                    self.current_ssid = match.group(1).strip()
+                    self.last_verified = timezone.now()
+                    logger.info(f"Detected SSID (alt method): '{self.current_ssid}'")
+                    return self.current_ssid
+            except Exception as alt_error:
+                logger.error(f"Alternative SSID detection failed: {str(alt_error)}")
+            
+            # If everything else fails, try a manual approach
+            if "SSID" in result.stdout:
+                # Try to extract the line containing "SSID"
+                ssid_line = [line for line in result.stdout.splitlines() if "SSID" in line and "BSSID" not in line]
+                if ssid_line:
+                    # Extract everything after the colon
+                    parts = ssid_line[0].split(':')
+                    if len(parts) > 1:
+                        self.current_ssid = parts[1].strip()
+                        self.last_verified = timezone.now()
+                        logger.info(f"Detected SSID (fallback): '{self.current_ssid}'")
+                        return self.current_ssid
+            
             # If we got here, couldn't extract the SSID
-            print(f"Debug: Could not extract SSID from output: '{result.stdout[:200]}...'")
+            logger.warning(f"Could not extract SSID from output: '{result.stdout[:200]}...'")
+            return None  # Changed from "Unknown_Network"
+            
         except subprocess.CalledProcessError as e:
-            print(f"Debug: Error running netsh command: {str(e)}")
+            logger.error(f"Error running netsh command: {str(e)}")
+            return None  # Changed from "Command_Error"
         except Exception as e:
-            print(f"Debug: Unexpected error getting SSID: {str(e)}")
-        return None
+            logger.error(f"Unexpected error getting SSID: {str(e)}")
+            return None  # Changed from "Detection_Error"
 
     def is_internet_available(self, timeout=3):
         """Check if internet access is available"""

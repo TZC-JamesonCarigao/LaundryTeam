@@ -13,30 +13,208 @@ logger = logging.getLogger(__name__)
 def get_saved_networks(request):
     """API endpoint to get available WiFi networks"""
     try:
+        network_list = []
+        
+        # Step 1: Get currently connected network
         from .tasks import WiFiConnectionManager
         manager = WiFiConnectionManager()
-        
-        # Get current SSID
         current_ssid = manager.get_current_ssid()
         
-        # Get all saved networks from the database
-        networks = WiFiNetwork.objects.all()
+        if current_ssid:
+            logger.info(f"Current SSID detected: {current_ssid}")
+            # Add current network to the list and database if needed
+            current_net_in_db = WiFiNetwork.objects.filter(ssid=current_ssid).first()
+            if current_net_in_db:
+                network_list.append({
+                    'id': current_net_in_db.id,
+                    'ssid': current_ssid,
+                    'isConnected': True,
+                    'isSaved': True,
+                    'isAvailable': True
+                })
+            else:
+                network_list.append({
+                    'id': 0,
+                    'ssid': current_ssid,
+                    'isConnected': True,
+                    'isSaved': True,
+                    'isAvailable': True
+                })
+                
+                # Save to database
+                WiFiNetwork.objects.create(
+                    ssid=current_ssid,
+                    password='',
+                    is_primary=True
+                )
         
-        # Format the response
-        network_list = []
-        for network in networks:
-            network_list.append({
-                'id': network.id,
-                'ssid': network.ssid,
-                'isConnected': network.ssid == current_ssid,
-                'isSaved': True,
-                'isAvailable': True  # Assuming all networks in DB are available
-            })
+        # Step 2: Get saved profiles from Windows using netsh
+        import subprocess
+        import platform
+        import re
+        
+        if platform.system() == "Windows":
+            try:
+                # Get saved profiles
+                profiles_output = subprocess.check_output(
+                    ['netsh', 'wlan', 'show', 'profiles'], 
+                    universal_newlines=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                # Extract profile names
+                profile_matches = re.findall(r'All User Profile\s+:\s+(.+?)(?:\r|\n)', profiles_output)
+                saved_profiles = [match.strip() for match in profile_matches if match.strip()]
+                logger.info(f"Found {len(saved_profiles)} saved WiFi profiles")
+                
+                # Step 3: Get available networks
+                networks_output = subprocess.check_output(
+                    ['netsh', 'wlan', 'show', 'networks'], 
+                    universal_newlines=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                # Extract SSID blocks from the output
+                ssid_blocks = re.split(r'SSID \d+ : ', networks_output)[1:]
+                
+                # Process each SSID block
+                available_networks = []
+                for block in ssid_blocks:
+                    lines = block.splitlines()
+                    if lines:
+                        ssid = lines[0].strip()
+                        # Check if this network is visible (signal strength present)
+                        is_available = any('Signal' in line for line in lines)
+                        if ssid and is_available:
+                            available_networks.append(ssid)
+                
+                logger.info(f"Found {len(available_networks)} available WiFi networks")
+                
+                # Step 4: Process all networks (saved and available)
+                # Only include saved networks that are available
+                for profile in saved_profiles:
+                    if profile in available_networks:
+                        db_network = WiFiNetwork.objects.filter(ssid=profile).first()
+                        network_list.append({
+                            'id': db_network.id if db_network else -1,
+                            'ssid': profile,
+                            'isConnected': profile == current_ssid,
+                            'isSaved': True,
+                            'isAvailable': True
+                        })
+                
+                # Optionally, add the current network if it's not in saved_profiles but is available
+                if current_ssid and current_ssid not in saved_profiles and current_ssid in available_networks:
+                    db_network = WiFiNetwork.objects.filter(ssid=current_ssid).first()
+                    network_list.append({
+                        'id': db_network.id if db_network else -1,
+                        'ssid': current_ssid,
+                        'isConnected': True,
+                        'isSaved': bool(db_network),
+                        'isAvailable': True
+                    })
             
+            except Exception as e:
+                logger.error(f"Error detecting networks with netsh: {str(e)}", exc_info=True)
+        
+        # Log the final network list
+        logger.info(f"Returning {len(network_list)} network(s): {[n['ssid'] for n in network_list]}")
         return JsonResponse(network_list, safe=False)
+        
     except Exception as e:
         logger.error(f"Error fetching networks: {str(e)}", exc_info=True)
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({'error': str(e)}, status=500)
+
+@require_http_methods(["GET"])
+def get_available_saved_networks(request):
+    """
+    API endpoint to get only saved WiFi networks that are currently available.
+    For use by settings.html only.
+    """
+    try:
+        import subprocess
+        import platform
+        import re
+
+        network_list = []
+        current_ssid = None
+        debug_info = {}
+
+        # Get current SSID using WiFiConnectionManager
+        try:
+            from .tasks import WiFiConnectionManager
+            manager = WiFiConnectionManager()
+            current_ssid = manager.get_current_ssid()
+        except Exception:
+            current_ssid = None
+
+        if platform.system() == "Windows":
+            # Get saved profiles
+            profiles_output = subprocess.check_output(
+                ['netsh', 'wlan', 'show', 'profiles'],
+                universal_newlines=True,
+                encoding='utf-8',
+                errors='replace'
+            )
+            profile_matches = re.findall(r'All User Profile\s+:\s+(.+?)(?:\r|\n)', profiles_output)
+            saved_profiles = [match.strip() for match in profile_matches if match.strip()]
+
+            # Get available networks
+            networks_output = subprocess.check_output(
+                ['netsh', 'wlan', 'show', 'networks'],
+                universal_newlines=True,
+                encoding='utf-8',
+                errors='replace'
+            )
+            ssid_blocks = re.split(r'SSID \d+ : ', networks_output)[1:]
+            available_networks = []
+            for block in ssid_blocks:
+                lines = block.splitlines()
+                if lines:
+                    ssid = lines[0].strip()
+                    is_available = any('Signal' in line for line in lines)
+                    if ssid and is_available:
+                        available_networks.append(ssid)
+
+            # Debug info
+            debug_info['saved_profiles'] = saved_profiles
+            debug_info['available_networks'] = available_networks
+            debug_info['current_ssid'] = current_ssid
+
+            # Normalize for robust matching
+            normalized_available = {a.strip().lower(): a.strip() for a in available_networks}
+            for profile in saved_profiles:
+                norm_profile = profile.strip().lower()
+                if norm_profile in normalized_available:
+                    db_network = WiFiNetwork.objects.filter(ssid=profile).first()
+                    network_list.append({
+                        'id': db_network.id if db_network else -1,
+                        'ssid': profile,
+                        'isConnected': profile == current_ssid,
+                        'isSaved': True,
+                        'isAvailable': True
+                    })
+
+            debug_info['matched_networks'] = [n['ssid'] for n in network_list]
+
+        # ...add macOS/Linux support if needed...
+
+        # If no networks found, return debug info for troubleshooting
+        if not network_list:
+            logger.warning("No networks found using automatic detection. Check system commands or network adapter.")
+            return JsonResponse({
+                "networks": [],
+                "debug_info": debug_info,
+                "error": "No networks detected. Check network adapter or permissions."
+            })
+
+        # Return the list (for frontend compatibility, just the array)
+        return JsonResponse(network_list, safe=False)
+    except Exception as e:
+        logger.error(f"Error in get_available_saved_networks: {str(e)}", exc_info=True)
+        return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
 @require_http_methods(["POST"])

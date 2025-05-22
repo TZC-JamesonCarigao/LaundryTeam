@@ -60,6 +60,12 @@
                 <button class="btn start-btn" id="start-schedule-btn">Start Schedule</button>
                 <div id="switching-duration" class="switching-duration"></div>
             </div>
+            
+            <!-- Schedule Status Indicator -->
+            <div class="schedule-status" id="schedule-status">
+                <span class="status-indicator"></span>
+                <span class="status-text">Schedule is currently inactive</span>
+            </div>
         </div>
     </div>
     
@@ -303,7 +309,48 @@
     .badge-danger {
         background-color: #ff3d00;
     }
+
+    .schedule-status {
+        position: absolute;
+        top: 180px;
+        left: 40px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #ccc; /* Default gray */
+        margin-right: 8px;
+    }
+    
+    .status-indicator.active {
+        background-color: #28a745; /* Green when active */
+        box-shadow: 0 0 8px #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
+    
+    .active-schedule {
+        background-color: #dc3545; /* Red for stop button */
+    }
+    
+    .active-schedule:hover {
+        background-color: #c82333; /* Darker red on hover */
+    }
 </style>
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -315,11 +362,47 @@
         const switchingDuration = document.getElementById('switching-duration');
         const startButton = document.getElementById('start-schedule-btn');
         const statusDiv = document.querySelector('.status');
+        const scheduleStatusIndicator = document.querySelector('.status-indicator');
+        const scheduleStatusText = document.querySelector('.status-text');
         
         // Schedule state variables
         let scheduleRunning = false;
         let scheduleTimer = null;
         let lastAction = null;
+
+        // Function to update UI based on schedule state
+        function updateScheduleUI(isRunning, message = null) {
+            scheduleRunning = isRunning;
+            
+            // Update button text and style
+            startButton.textContent = isRunning ? 'Stop Schedule' : 'Start Schedule';
+            
+            if (isRunning) {
+                startButton.classList.add('active-schedule');
+                scheduleStatusIndicator.classList.add('active');
+                scheduleStatusText.textContent = message || 'Schedule is currently active';
+                
+                // Disable configuration fields
+                primaryDropdown.disabled = true;
+                secondaryDropdown.disabled = true;
+                switchTimeInput.disabled = true;
+                revertTimeInput.disabled = true;
+                
+            } else {
+                startButton.classList.remove('active-schedule');
+                scheduleStatusIndicator.classList.remove('active');
+                scheduleStatusText.textContent = 'Schedule is currently inactive';
+                
+                // Enable configuration fields
+                primaryDropdown.disabled = false;
+                secondaryDropdown.disabled = false;
+                switchTimeInput.disabled = false;
+                revertTimeInput.disabled = false;
+            }
+            
+            // Save to localStorage for UI state persistence
+            localStorage.setItem('laundry_app_schedule_running', isRunning.toString());
+        }
 
         // Load saved settings from localStorage
         function loadSavedSettings() {
@@ -368,6 +451,127 @@
             localStorage.setItem('laundry_app_schedule_running', scheduleRunning.toString());
         }
 
+        //New
+    //    // Function to fetch available saved networks from the computer
+    //     async function fetchSavedNetworks() {
+    //         try {
+    //             if (statusDiv) {
+    //                 statusDiv.innerHTML = '<strong>Connection Status:</strong> <span style="color: #007bff;">Fetching network information...</span>';
+    //             }
+
+    //             const currentNetwork = await getCurrentNetwork();
+    //             const response = await fetch('/api/available-saved-networks/');
+
+    //             if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+    //             const data = await response.json();
+    //             console.log("Network API response:", data);
+
+    //             if (data.error) throw new Error(data.error);
+
+    //             let networks = Array.isArray(data) ? data : [];
+    //             if (currentNetwork && !networks.some(n => n.ssid === currentNetwork.ssid)) {
+    //                 networks.unshift(currentNetwork);
+    //             }
+
+    //             networks = networks.filter(n => n.isSaved && (n.isAvailable || n.isConnected));
+    //             updateConnectionStatus(networks, currentNetwork || networks.find(n => n.isConnected));
+    //             return networks;
+
+    //         } catch (error) {
+    //             console.error('Error fetching saved networks:', error);
+
+    //             try {
+    //                 const fallbackNetwork = await getCurrentNetworkFallback();
+    //                 if (fallbackNetwork) {
+    //                     if (statusDiv) {
+    //                         statusDiv.innerHTML = `<strong>Connected to:</strong> ${fallbackNetwork.ssid} (limited detection)`;
+    //                     }
+    //                     return [fallbackNetwork];
+    //                 }
+    //             } catch (fallbackError) {
+    //                 console.error('Fallback method failed:', fallbackError);
+    //             }
+
+    //             if (statusDiv) {
+    //                 statusDiv.innerHTML = `<strong>Connection Status:</strong> <span style="color: #ff3d00;">Error: ${error.message}</span>`;
+    //             }
+
+    //             return [];
+    //         }
+    //     }
+
+    //     // Remaining helper functions (unchanged)
+    //     async function getCurrentNetwork() { /* ...same as before... */ }
+    //     async function getCurrentNetworkFallback() { /* ...same as before... */ }
+    //     function attemptClientSideWifiDetection() { /* ...same as before... */ }
+    //     function updateConnectionStatus(networks, currentNetwork) { /* ...same as before... */ }
+
+    //     // Function to populate dropdowns
+    //     async function populateWifiDropdowns() {
+    //         primaryDropdown.innerHTML = '<option value="" disabled selected>Loading networks...</option>';
+    //         secondaryDropdown.innerHTML = '<option value="" disabled selected>Loading networks...</option>';
+
+    //         const savedSettings = loadSavedSettings();
+    //         const networks = await fetchSavedNetworks();
+
+    //         primaryDropdown.innerHTML = '<option value="" disabled hidden>Select Primary WiFi</option>';
+    //         secondaryDropdown.innerHTML = '<option value="" disabled hidden>Select Secondary WiFi</option>';
+
+    //         if (!networks || networks.length === 0) {
+    //             console.warn('No networks found');
+    //             primaryDropdown.innerHTML = '<option value="" disabled selected>No networks detected</option>';
+    //             secondaryDropdown.innerHTML = '<option value="" disabled selected>No networks detected</option>';
+
+    //             if (statusDiv) {
+    //                 statusDiv.innerHTML = '<strong>Connection Status:</strong> <span style="color: #ff7700;">No WiFi networks were detected. Please ensure WiFi is enabled.</span>';
+    //             }
+
+    //             return;
+    //         }
+
+    //         const currentNetwork = networks.find(network => network.isConnected || network.isCurrent);
+    //         networks.sort((a, b) => {
+    //             if (a.isConnected || a.isCurrent) return -1;
+    //             if (b.isConnected || b.isCurrent) return 1;
+    //             return a.ssid.localeCompare(b.ssid);
+    //         });
+
+    //         let primaryToSelect = savedSettings.primaryNetwork || (currentNetwork && currentNetwork.ssid);
+
+    //         networks.forEach(network => {
+    //             const option = document.createElement('option');
+    //             option.value = network.ssid;
+    //             option.textContent = network.ssid;
+    //             if (network.ssid === primaryToSelect) option.selected = true;
+    //             primaryDropdown.appendChild(option);
+    //         });
+
+    //         primaryDropdown.dataset.networksList = JSON.stringify(networks);
+    //         updateSecondaryDropdownFromNetworks(networks, savedSettings.secondaryNetwork);
+
+    //         primaryDropdown.removeEventListener('change', handlePrimaryChange);
+    //         primaryDropdown.addEventListener('change', handlePrimaryChange);
+
+    //         updateScheduleInfo();
+    //     }
+
+    //     // ✅ Add this once to ensure Retry button works
+    //     document.addEventListener('DOMContentLoaded', () => {
+    //         const retryBtn = document.getElementById('retryScanBtn');
+    //         if (retryBtn) {
+    //             retryBtn.addEventListener('click', async () => {
+    //                 console.log('Retry button clicked: rescan starting...');
+    //                 await populateWifiDropdowns();
+    //             });
+    //         }
+
+    //         // Initial population
+    //         populateWifiDropdowns();
+    //     });
+
+
+
         // Function to fetch available saved networks from the computer
         async function fetchSavedNetworks() {
             try {
@@ -377,7 +581,7 @@
                 }
                 
                 // Fetch actual saved networks from our API endpoint
-                const response = await fetch('/api/saved-networks/');
+                const response = await fetch('/api/available-saved-networks/');
                 
                 // Check if the fetch was successful
                 if (!response.ok) {
@@ -386,25 +590,29 @@
                 
                 const data = await response.json();
                 
-                // Check if we got a networks array or an object with a networks property
-                let networks = Array.isArray(data) ? data : (data.networks || []);
+                // Log the raw response for debugging
+                console.log("Network API response:", data);
                 
-                // For debugging - log if we received debug_info
-                if (data.debug_info) {
-                    console.log("Debug info from network detection:", data.debug_info);
+                // Check if we got an error response
+                if (data.error) {
+                    throw new Error(data.error);
                 }
                 
-                // Update status with success or error message
+                // Make sure we have an array of networks and filter out any possible dummy networks
+                let networks = Array.isArray(data) ? data : [];
+                
+                // Only use saved and available networks
+                networks = networks.filter(n => n.isSaved && n.isAvailable);
+                
+                // Update the connection status in the UI
                 if (statusDiv) {
-                    if (networks.length === 0) {
-                        statusDiv.innerHTML = '<strong>Connection Status:</strong> <span style="color: #ff7700;">No networks detected. Check WiFi adapter.</span>';
+                    const currentNetwork = networks.find(network => network.isConnected);
+                    if (currentNetwork) {
+                        statusDiv.innerHTML = `<strong>Connected to:</strong> ${currentNetwork.ssid}`;
+                    } else if (networks.length > 0) {
+                        statusDiv.innerHTML = '<strong>Connected to:</strong> Not connected to any known network';
                     } else {
-                        const currentNetwork = networks.find(network => network.isConnected);
-                        if (currentNetwork) {
-                            statusDiv.innerHTML = `<strong>Connected to:</strong> ${currentNetwork.ssid}`;
-                        } else {
-                            statusDiv.innerHTML = '<strong>Connected to:</strong> Not connected to any known network';
-                        }
+                        statusDiv.innerHTML = '<strong>Connection Status:</strong> No WiFi networks detected';
                     }
                 }
                 
@@ -417,7 +625,7 @@
                     statusDiv.innerHTML = `<strong>Connection Status:</strong> <span style="color: #ff3d00;">Error: ${error.message}</span>`;
                 }
                 
-                // Return empty array to prevent further errors
+                // Return empty array when there's an error instead of fallback networks
                 return [];
             }
         }
@@ -432,19 +640,22 @@
             const savedSettings = loadSavedSettings();
             
             // Fetch actual networks from the computer
-            let networks = await fetchSavedNetworks();
-            
-            // Filter to only include saved AND available networks
-            networks = networks.filter(network => network.isSaved && network.isAvailable);
+            const networks = await fetchSavedNetworks();
             
             // Clear loading message
             primaryDropdown.innerHTML = '<option value="" disabled hidden>Select Primary WiFi</option>';
             secondaryDropdown.innerHTML = '<option value="" disabled hidden>Select Secondary WiFi</option>';
             
             if (!networks || networks.length === 0) {
-                console.warn('No saved and available networks found');
-                primaryDropdown.innerHTML = '<option value="" disabled selected>No saved networks available</option>';
-                secondaryDropdown.innerHTML = '<option value="" disabled selected>No saved networks available</option>';
+                console.warn('No networks found');
+                primaryDropdown.innerHTML = '<option value="" disabled selected>No networks detected</option>';
+                secondaryDropdown.innerHTML = '<option value="" disabled selected>No networks detected</option>';
+                
+                // Show error message in status
+                if (statusDiv) {
+                    statusDiv.innerHTML = '<strong>Connection Status:</strong> <span style="color: #ff7700;">No WiFi networks were detected. Please ensure WiFi is enabled.</span>';
+                }
+                
                 return;
             }
             
@@ -458,68 +669,174 @@
                 return a.ssid.localeCompare(b.ssid);
             });
             
+            // Track which network to select
+            let primaryToSelect = null;
+            
+            // First, try to use the saved primary network if it exists
+            if (currentNetwork) {
+                primaryToSelect = currentNetwork.ssid;
+            } else if (savedSettings.primaryNetwork) {
+                primaryToSelect = savedSettings.primaryNetwork;
+            }
+            
             // Populate primary dropdown
             networks.forEach(network => {
                 const option = document.createElement('option');
                 option.value = network.ssid;
                 option.textContent = network.ssid;
                 
-                // Set saved network as selected
-                if (network.ssid === savedSettings.primaryNetwork) {
-                    option.selected = true;
-                }
-                // If no saved selection, use current network
-                else if (!savedSettings.primaryNetwork && network.isConnected) {
+                // Select if this matches our target network
+                if (network.ssid === primaryToSelect) {
                     option.selected = true;
                 }
                 
                 primaryDropdown.appendChild(option);
             });
             
-            // Initially populate secondary dropdown (excluding the currently selected primary)
-            updateSecondaryDropdown(savedSettings.secondaryNetwork);
+            // Store original networks list for later use
+            primaryDropdown.dataset.networksList = JSON.stringify(networks);
+            
+            // Update secondary dropdown based on primary selection
+            updateSecondaryDropdownFromNetworks(networks, savedSettings.secondaryNetwork);
+            
+            // Remove any existing event listener first to prevent duplicates
+            primaryDropdown.removeEventListener('change', handlePrimaryChange);
             
             // Add event listener to update secondary dropdown when primary selection changes
-            primaryDropdown.addEventListener('change', function() {
-                updateSecondaryDropdown();
-                saveSettings(); // Save when selection changes
-            });
-            
-            function updateSecondaryDropdown(selectedSecondaryNetwork = null) {
-                const selectedPrimary = primaryDropdown.value;
-                
-                // Clear existing options except the first one
-                secondaryDropdown.innerHTML = '<option value="" disabled selected hidden>Select Secondary WiFi</option>';
-                
-                // Populate secondary dropdown excluding the selected primary network
-                networks.forEach(network => {
-                    if (network.ssid !== selectedPrimary) {
-                        const option = document.createElement('option');
-                        option.value = network.ssid;
-                        option.textContent = network.ssid;
-                        
-                        // Select the saved secondary network if it exists
-                        if (network.ssid === selectedSecondaryNetwork) {
-                            option.selected = true;
-                        }
-                        
-                        secondaryDropdown.appendChild(option);
-                    }
-                });
-                
-                // Add change listener to the secondary dropdown
-                secondaryDropdown.addEventListener('change', saveSettings);
-            }
-            
-            // If schedule was running before, restart it
-            if (scheduleRunning) {
-                startSchedule();
-            }
+            primaryDropdown.addEventListener('change', handlePrimaryChange);
             
             // Update the schedule info display
             updateScheduleInfo();
         }
         
+        // Helper function to populate both dropdowns
+        function populateNetworkDropdowns(networks, savedSettings) {
+            // Get current network if available
+            const currentNetwork = networks.find(network => network.isConnected);
+            
+            // Sort networks to put the connected network first
+            networks.sort((a, b) => {
+                if (a.isConnected) return -1;
+                if (b.isConnected) return 1;
+                return a.ssid.localeCompare(b.ssid);
+            });
+            
+            // Track which network to select
+            let primaryToSelect = null;
+            
+            // First, try to use the saved primary network if it exists
+            if (savedSettings.primaryNetwork) {
+                primaryToSelect = savedSettings.primaryNetwork;
+            } 
+            // Otherwise, use the currently connected network
+            else if (currentNetwork) {
+                primaryToSelect = currentNetwork.ssid;
+            }
+            
+            // Populate primary dropdown
+            networks.forEach(network => {
+                const option = document.createElement('option');
+                option.value = network.ssid;
+                option.textContent = network.ssid;
+                
+                // Select if this matches our target network
+                if (network.ssid === primaryToSelect) {
+                    option.selected = true;
+                }
+                
+                primaryDropdown.appendChild(option);
+            });
+            
+            // Store original networks list for later use
+            primaryDropdown.dataset.networksList = JSON.stringify(networks);
+            
+            // Initially populate secondary dropdown (excluding the currently selected primary)
+            updateSecondaryDropdownFromNetworks(networks, savedSettings.secondaryNetwork);
+            
+            // Remove any existing event listener first to prevent duplicates
+            primaryDropdown.removeEventListener('change', handlePrimaryChange);
+            
+            // Add event listener to update secondary dropdown when primary selection changes
+            primaryDropdown.addEventListener('change', handlePrimaryChange);
+            
+            // Update the schedule info display
+            updateScheduleInfo();
+        }
+
+        // Separate handler function for primary dropdown changes
+        function handlePrimaryChange() {
+            // Get original networks list
+            const networksListJson = primaryDropdown.dataset.networksList;
+            if (networksListJson) {
+                const networksList = JSON.parse(networksListJson);
+                updateSecondaryDropdownFromNetworks(networksList);
+            } else {
+                // Fallback if data attribute is not available
+                updateSecondaryDropdownFromOptions();
+            }
+            saveSettings(); // Save when selection changes
+        }
+        
+        // Updated function that uses the original networks list
+        function updateSecondaryDropdownFromNetworks(networksList, selectedSecondaryNetwork = null) {
+            const selectedPrimary = primaryDropdown.value;
+            
+            // Clear existing options except the first one
+            secondaryDropdown.innerHTML = '<option value="" disabled selected hidden>Select Secondary WiFi</option>';
+            
+            // Get networks excluding the selected primary
+            const availableSecondaryNetworks = networksList.filter(
+                network => network.ssid !== selectedPrimary
+            );
+            
+            // Populate secondary dropdown excluding the selected primary network
+            availableSecondaryNetworks.forEach(network => {
+                const option = document.createElement('option');
+                option.value = network.ssid;
+                option.textContent = network.ssid;
+                
+                // Select the saved secondary network if it exists
+                if (network.ssid === selectedSecondaryNetwork) {
+                    option.selected = true;
+                }
+                
+                secondaryDropdown.appendChild(option);
+            });
+            
+            // Remove any existing listener before adding to prevent duplicates
+            secondaryDropdown.removeEventListener('change', saveSettings);
+            
+            // Add change listener to the secondary dropdown
+            secondaryDropdown.addEventListener('change', saveSettings);
+        }
+        
+        // Fallback method using the options in the primary dropdown
+        function updateSecondaryDropdownFromOptions() {
+            const selectedPrimary = primaryDropdown.value;
+            
+            // Clear existing options except the first one
+            secondaryDropdown.innerHTML = '<option value="" disabled selected hidden>Select Secondary WiFi</option>';
+            
+            // Get available networks from primary dropdown options
+            const networks = Array.from(primaryDropdown.options)
+                .filter(opt => opt.value && opt.value !== selectedPrimary)
+                .map(opt => ({ ssid: opt.value }));
+            
+            // Populate secondary dropdown excluding the selected primary network
+            networks.forEach(network => {
+                const option = document.createElement('option');
+                option.value = network.ssid;
+                option.textContent = network.ssid;
+                secondaryDropdown.appendChild(option);
+            });
+            
+            // Remove any existing listener before adding to prevent duplicates
+            secondaryDropdown.removeEventListener('change', saveSettings);
+            
+            // Add change listener to the secondary dropdown
+            secondaryDropdown.addEventListener('change', saveSettings);
+        }
+
         // Time handling functions
         function updateScheduleInfo() {
             const switchTime = switchTimeInput.value;
@@ -625,15 +942,7 @@
             .then(data => {
                 if (data.success) {
                     // Update UI to show schedule is running
-                    scheduleRunning = true;
-                    startButton.textContent = 'Stop Schedule';
-                    startButton.classList.add('active-schedule');
-                    
-                    // Disable form fields
-                    primaryDropdown.disabled = true;
-                    secondaryDropdown.disabled = true;
-                    switchTimeInput.disabled = true;
-                    revertTimeInput.disabled = true;
+                    updateScheduleUI(true, `Schedule started. Switching between ${schedule.primaryWifi} and ${schedule.secondaryWifi}`);
                     
                     // Add to activity log
                     addLogEntry(`Schedule started on server. Will switch between ${schedule.primaryWifi} and ${schedule.secondaryWifi}`, true);
@@ -663,15 +972,7 @@
             .then(data => {
                 if (data.success) {
                     // Update UI
-                    scheduleRunning = false;
-                    startButton.textContent = 'Start Schedule';
-                    startButton.classList.remove('active-schedule');
-                    
-                    // Enable form fields
-                    primaryDropdown.disabled = false;
-                    secondaryDropdown.disabled = false;
-                    switchTimeInput.disabled = false;
-                    revertTimeInput.disabled = false;
+                    updateScheduleUI(false);
                     
                     // Add to activity log
                     addLogEntry('Schedule stopped on server.', true);
@@ -703,51 +1004,38 @@
                 .then(data => {
                     if (data.active) {
                         // Update UI to show schedule is running
-                        scheduleRunning = true;
-                        startButton.textContent = 'Stop Schedule';
-                        startButton.classList.add('active-schedule');
-                        
-                        // Disable form fields if needed
-                        primaryDropdown.disabled = true;
-                        secondaryDropdown.disabled = true;
-                        switchTimeInput.disabled = true;
-                        revertTimeInput.disabled = true;
+                        updateScheduleUI(true, data.message || 'Schedule is active and running on server');
                         
                         // Update schedule details if available
                         if (data.schedule) {
-                            // Try to select the primary network if available
-                            if (data.schedule.primaryWifi) {
-                                for (let i = 0; i < primaryDropdown.options.length; i++) {
-                                    if (primaryDropdown.options[i].value === data.schedule.primaryWifi) {
-                                        primaryDropdown.selectedIndex = i;
-                                        break;
-                                    }
+                            const serverPrimaryWifi = data.schedule.primaryWifi;
+                            const serverSecondaryWifi = data.schedule.secondaryWifi;
+                            
+                            // Only update dropdown selections if both networks are available
+                            if (serverPrimaryWifi && serverSecondaryWifi) {
+                                // Check if primary network exists in dropdown
+                                const primaryExists = Array.from(primaryDropdown.options)
+                                    .some(opt => opt.value === serverPrimaryWifi);
+                                    
+                                if (primaryExists) {
+                                    // Select the primary network
+                                    primaryDropdown.value = serverPrimaryWifi;
+                                    
+                                    // Rebuild secondary dropdown to exclude the new primary
+                                    updateSecondaryDropdown(serverSecondaryWifi);
                                 }
-                                
-                                // Update secondary dropdown with current settings
-                                updateSecondaryDropdown();
-                                
-                                // Try to select the secondary network if available
-                                if (data.schedule.secondaryWifi) {
-                                    for (let i = 0; i < secondaryDropdown.options.length; i++) {
-                                        if (secondaryDropdown.options[i].value === data.schedule.secondaryWifi) {
-                                            secondaryDropdown.selectedIndex = i;
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                // Set the times
-                                if (data.schedule.switchTime) {
-                                    switchTimeInput.value = data.schedule.switchTime;
-                                }
-                                if (data.schedule.revertTime) {
-                                    revertTimeInput.value = data.schedule.revertTime;
-                                }
-                                
-                                // Update schedule info display
-                                updateScheduleInfo();
                             }
+                            
+                            // Set the times
+                            if (data.schedule.switchTime) {
+                                switchTimeInput.value = data.schedule.switchTime;
+                            }
+                            if (data.schedule.revertTime) {
+                                revertTimeInput.value = data.schedule.revertTime;
+                            }
+                            
+                            // Update schedule info display
+                            updateScheduleInfo();
                         }
 
                         // Add log entry if schedule is active but we just loaded the page
@@ -757,17 +1045,7 @@
                         }
                     } else {
                         // Ensure UI shows schedule is not running
-                        if (scheduleRunning) {
-                            scheduleRunning = false;
-                            startButton.textContent = 'Start Schedule';
-                            startButton.classList.remove('active-schedule');
-                            
-                            // Enable form fields
-                            primaryDropdown.disabled = false;
-                            secondaryDropdown.disabled = false;
-                            switchTimeInput.disabled = false;
-                            revertTimeInput.disabled = false;
-                        }
+                        updateScheduleUI(false);
                     }
                 })
                 .catch(error => {
@@ -840,32 +1118,4 @@
     });
 </script>
 
-<script>
-    // Prevent errors from scripts.js if it tries to access elements that don't exist in this page
-    window.addEventListener('DOMContentLoaded', function() {
-        // Create dummy objects for any elements that might be accessed by scripts.js
-        // This prevents "Cannot read property of null" errors
-        if (typeof window.dummyNodesCreated === 'undefined') {
-            window.dummyNodesCreated = true;
-            
-            // Common elements that might be accessed in scripts.js
-            const dummyDiv = document.createElement('div');
-            dummyDiv.style.display = 'none';
-            
-            // Create a dummy element with addEventListener that does nothing
-            dummyDiv.addEventListener = function() {};
-            
-            // Override getElementById to return our dummy for missing elements
-            const originalGetElementById = document.getElementById;
-            document.getElementById = function(id) {
-                const element = originalGetElementById.call(document, id);
-                if (!element) {
-                    console.log(`Warning: Element with id '${id}' not found, using dummy element`);
-                    return dummyDiv;
-                }
-                return element;
-            };
-        }
-    });
-</script>
 {% endblock %}

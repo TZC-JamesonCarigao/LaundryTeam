@@ -577,91 +577,105 @@
 
         // Initialize parsing functionality
         const initParsing = () => {
-            // File filtering
-            document.querySelectorAll('[data-filter]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const filter = this.dataset.filter;
-                    document.querySelectorAll('#processedFilesList li').forEach(item => {
-                        item.style.display = (filter === 'all' || item.dataset.status === filter) 
-                            ? '' 
-                            : 'none';
+            // Add null checks before accessing elements
+            const filterButtons = document.querySelectorAll('[data-filter]');
+            if (filterButtons.length) {
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const filter = this.dataset.filter;
+                        const listItems = document.querySelectorAll('#processedFilesList li');
+                        if (listItems.length) {
+                            listItems.forEach(item => {
+                                item.style.display = (filter === 'all' || item.dataset.status === filter) 
+                                    ? '' 
+                                    : 'none';
+                            });
+                        }
+                        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
                     });
-                    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
                 });
-            });
+            }
 
             // Start Parsing Button
-            document.getElementById('startBtn').addEventListener('click', async function() {
-                const scheduleSelect = document.getElementById('scheduleSelect');
-                const scheduleId = scheduleSelect ? scheduleSelect.value : '';
-                
-                try {
-                    const url = scheduleId ? 
-                        `/api/trigger-parsing/?schedule_id=${scheduleId}` : 
-                        '/api/trigger-parsing/';
+            const startBtn = document.getElementById('startBtn');
+            if (startBtn) {
+                startBtn.addEventListener('click', async function() {
+                    const scheduleSelect = document.getElementById('scheduleSelect');
+                    const scheduleId = scheduleSelect ? scheduleSelect.value : '';
                     
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                    try {
+                        const url = scheduleId ? 
+                            `/api/trigger-parsing/?schedule_id=${scheduleId}` : 
+                            '/api/trigger-parsing/';
+                        
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            }
+                        });
+
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                        const data = await response.json();
+                        
+                        if (data.status === 'started') {
+                            BaseModule.showToast("Parsing started successfully!", "success");
+                            document.getElementById('parsingStatus').textContent = "Status: Parsing in progress";
+                            document.getElementById('startBtn').disabled = true;
+                            document.getElementById('pauseBtn').disabled = false;
+                            connectWebSocket(data.task_id);
+                        } else {
+                            BaseModule.showToast(data.message || "Failed to start parsing", "error");
                         }
-                    });
-
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                    const data = await response.json();
-                    
-                    if (data.status === 'started') {
-                        BaseModule.showToast("Parsing started successfully!", "success");
-                        document.getElementById('parsingStatus').textContent = "Status: Parsing in progress";
-                        document.getElementById('startBtn').disabled = true;
-                        document.getElementById('pauseBtn').disabled = false;
-                        connectWebSocket(data.task_id);
-                    } else {
-                        BaseModule.showToast(data.message || "Failed to start parsing", "error");
+                    } catch (error) {
+                        BaseModule.showToast("Error: " + error.message, "error");
+                        document.getElementById('startBtn').disabled = false;
                     }
-                } catch (error) {
-                    BaseModule.showToast("Error: " + error.message, "error");
-                    document.getElementById('startBtn').disabled = false;
-                }
-            });
+                });
+            }
 
             // Pause/Resume Button
-            document.getElementById('pauseBtn').addEventListener('click', async function() {
-                try {
-                    const response = await fetch("/api/toggle-parsing/", {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                            'Content-Type': 'application/json'
+            const pauseBtn = document.getElementById('pauseBtn');
+            if (pauseBtn) {
+                pauseBtn.addEventListener('click', async function() {
+                    try {
+                        const response = await fetch("/api/toggle-parsing/", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.status === 'paused' || data.status === 'resumed') {
+                            BaseModule.showToast(`Parsing ${data.status}`, data.status === 'paused' ? 'warning' : 'success');
+                            this.innerHTML = data.status === 'paused' 
+                                ? '<i class="bi bi-play-circle"></i> Resume' 
+                                : '<i class="bi bi-pause-circle"></i> Pause';
                         }
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.status === 'paused' || data.status === 'resumed') {
-                        BaseModule.showToast(`Parsing ${data.status}`, data.status === 'paused' ? 'warning' : 'success');
-                        this.innerHTML = data.status === 'paused' 
-                            ? '<i class="bi bi-play-circle"></i> Resume' 
-                            : '<i class="bi bi-pause-circle"></i> Pause';
+                    } catch (error) {
+                        BaseModule.showToast("Error: " + error.message, "error");
                     }
-                } catch (error) {
-                    BaseModule.showToast("Error: " + error.message, "error");
-                }
-            });
+                });
+            }
 
             // Initial load and check for interrupted tasks
-            fetchProcessedFiles();
-            fetch('/api/check-interrupted/')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.found) {
-                        BaseModule.showToast(`Found interrupted task for file: ${data.last_file}`, 'warning');
-                    }
-                })
-                .catch(error => console.error('Error checking interrupted tasks:', error));
+            if (document.getElementById('processedFilesList')) {
+                fetchProcessedFiles();
+                fetch('/api/check-interrupted/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.found) {
+                            BaseModule.showToast(`Found interrupted task for file: ${data.last_file}`, 'warning');
+                        }
+                    })
+                    .catch(error => console.error('Error checking interrupted tasks:', error));
+            }
         };
 
         return {

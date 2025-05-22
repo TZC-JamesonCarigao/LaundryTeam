@@ -470,93 +470,6 @@ def laundry_data_ajax(request):
             "error": str(e)
         }, status=200, Status=200)  # Send 200 status with error info for DataTables to display
     
-#NEW Start
-# @method_decorator(login_required, name='dispatch')
-# class IndexView(View):
-#     def get(self, request):
-#         networks = WiFiNetwork.objects.filter(user=request.user)
-#         schedules = Schedule.objects.filter(user=request.user)
-#         current_ssid = WiFiConnectionManager().get_current_ssid()
-        
-#         context = {
-#             'networks': networks,
-#             'schedules': schedules,
-#             'current_ssid': current_ssid,
-#         }
-#         return render(request, 'scheduler/settings.html', context)
-    
-#     def post(self, request):
-#         if 'add_network' in request.POST:
-#             ssid = request.POST.get('ssid')
-#             password = request.POST.get('password')
-#             is_primary = request.POST.get('is_primary') == 'on'
-#             name = request.POST.get('name', ssid)
-            
-#             if WiFiNetwork.objects.filter(user=request.user, ssid=ssid).exists():
-#                 messages.error(request, 'A network with this SSID already exists')
-#             else:
-#                 WiFiNetwork.objects.create(
-#                     user=request.user,
-#                     name=name,
-#                     ssid=ssid,
-#                     password=password,
-#                     is_primary=is_primary
-#                 )
-#                 messages.success(request, 'Network added successfully')
-        
-#         elif 'add_schedule' in request.POST:
-#             name = request.POST.get('name', 'New Schedule')
-#             primary_id = request.POST.get('primary_network')
-#             secondary_id = request.POST.get('secondary_network')
-#             switch_time = request.POST.get('switch_time')
-#             revert_time = request.POST.get('revert_time')
-            
-#             if switch_time == revert_time:
-#                 messages.error(request, 'Switch and revert times cannot be the same')
-#             else:
-#                 Schedule.objects.create(
-#                     user=request.user,
-#                     name=name,
-#                     primary_network_id=primary_id,
-#                     secondary_network_id=secondary_id,
-#                     switch_time=switch_time,
-#                     revert_time=revert_time
-#                 )
-#                 messages.success(request, 'Schedule added successfully')
-        
-#         elif 'toggle_schedule' in request.POST:
-#             schedule_id = request.POST.get('schedule_id')
-#             schedule = Schedule.objects.get(id=schedule_id, user=request.user)
-#             schedule.is_active = not schedule.is_active
-#             schedule.save()
-            
-#             status = 'activated' if schedule.is_active else 'deactivated'
-#             messages.success(request, f'Schedule {status} successfully')
-        
-#         elif 'delete_schedule' in request.POST:
-#             schedule_id = request.POST.get('schedule_id')
-#             Schedule.objects.filter(id=schedule_id, user=request.user).delete()
-#             messages.success(request, 'Schedule deleted successfully')
-        
-#         elif 'delete_network' in request.POST:
-#             network_id = request.POST.get('network_id')
-#             WiFiNetwork.objects.filter(id=network_id, user=request.user).delete()
-#             messages.success(request, 'Network deleted successfully')
-        
-#         return redirect('wifi_scheduler:settings')
-
-# @method_decorator(login_required, name='dispatch')
-# class StatusView(View):
-    # def get(self, request):
-    #     logs = ConnectionLog.objects.filter(user=request.user)[:50]
-    #     current_ssid = WiFiConnectionManager().get_current_ssid()
-        
-    #     context = {
-    #         'logs': logs,
-    #         'current_ssid': current_ssid,
-    #     }
-    #     return render(request, 'scheduler/status.html', context)
-
 #---2nd---
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -625,8 +538,7 @@ class IndexView(View):
             messages.success(request, f'Schedule {Status} successfully')
         
         return redirect('settings')
-
-
+    
 @method_decorator(login_required, name='dispatch')
 class StatusView(View):
     def get(self, request):
@@ -824,77 +736,68 @@ def switch_network(request):
         logger.error(f"Error in switch_network: {str(e)}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)})
 
+
 @login_required
 def import_excel_data(request):
-    """Import data from Excel file to the DisplayData table"""
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Only POST requests allowed'})
-    
+    """Import data from local HTML file using Selenium + pandas"""
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.chrome.service import Service
+    import time
+
     try:
-        # Path to the Excel file
-        excel_path = r"C:\Users\ADMIN\Documents\Dashboard.xlsx"
-        
-        # Check if file exists
-        if not os.path.exists(excel_path):
-            error_msg = f"Excel file not found at {excel_path}"
-            ConnectionLog.objects.create(
-                user=request.user,
-                message=error_msg,
-                is_success=False
-            )
-            return JsonResponse({'success': False, 'error': error_msg})
-        
-        # Load data from Excel
-        try:
-            df = pd.read_excel(excel_path)
-        except Exception as e:
-            error_msg = f"Error reading Excel file: {str(e)}"
-            ConnectionLog.objects.create(
-                user=request.user,
-                message=error_msg,
-                is_success=False
-            )
-            return JsonResponse({'success': False, 'error': error_msg})
-        
-        # Check for required columns
+        # Define paths
+        driver_path = 'drivers/chromedriver.exe'  # Adjust if needed
+        local_html_path = os.path.abspath(
+            'C:/Users/ADMIN/Documents/TZC/LaundryTeam-main/LaundryTeam-main/Reporting System.html'
+        )
+        html_url = f"file:///{local_html_path.replace(os.sep, '/')}"
+
+        # Start Selenium browser
+        service = Service(driver_path)
+        browser = webdriver.Chrome(service=service)
+        browser.get(html_url)
+        time.sleep(5)  # Let the page fully load
+
+        # Extract table using pandas
+        tables = pd.read_html(browser.page_source)
+        browser.quit()
+
+        if not tables:
+            msg = "No table found in HTML report"
+            ConnectionLog.objects.create(user=request.user, message=msg, is_success=False)
+            return JsonResponse({'success': False, 'error': msg})
+
+        df = tables[0]  # Use first table only
+
+        # Validate columns
         expected_columns = [
             'DATE', 'Washing Machine', 'PROGRAM', 'TIME TO FILL', 'TOTAL TIME', 
             'ELEC', 'WATER 1', 'WATER 2', 'GAS', 'CHEMICAL', 'COST PER KW', 
             'GAS COST', 'Water cost', 'TOTAL'
         ]
-        
+
         for col in expected_columns:
             if col not in df.columns:
-                error_msg = f"Missing column in Excel: {col}"
-                ConnectionLog.objects.create(
-                    user=request.user,
-                    message=error_msg,
-                    is_success=False
-                )
+                error_msg = f"Missing column in HTML: {col}"
+                ConnectionLog.objects.create(user=request.user, message=error_msg, is_success=False)
                 return JsonResponse({'success': False, 'error': error_msg})
-        
-        # Get existing dates to avoid duplicates
+
+        # Filter duplicates
         existing_dates = set(DisplayData.objects.values_list('date', flat=True))
-        
-        # Convert dates to strings for comparison
         existing_dates = {str(d) for d in existing_dates}
-        
-        # Start adding data
+
         records_added = 0
         records_skipped = 0
-        
+
         for _, row in df.iterrows():
-            # Convert date to string for comparison
-            date_str = str(row['DATE'])
-            
-            # Skip if this date already exists
-            if date_str in existing_dates:
+           date_str = str(row['DATE'])
+           if date_str in existing_dates:
                 records_skipped += 1
                 continue
-            
-            try:
-                # Create a new DisplayData record
-                display_data = DisplayData(
+
+           try:
+                DisplayData.objects.create(
                     date=date_str,
                     washing_machine=row.get('Washing Machine', ''),
                     program=row.get('PROGRAM', ''),
@@ -910,44 +813,149 @@ def import_excel_data(request):
                     water_cost=row.get('Water cost', None),
                     total=row.get('TOTAL', None)
                 )
-                display_data.save()
+
                 records_added += 1
-                
-                # Add to existing dates to prevent duplicates
+        
                 existing_dates.add(date_str)
-                
-            except Exception as e:
+
+           except Exception as e:
                 logger.error(f"Error importing row: {str(e)}", exc_info=True)
-        
-        # Log the result
-        message = f"Imported {records_added} records from Excel ({records_skipped} skipped as duplicates)"
-        ConnectionLog.objects.create(
-            user=request.user,
-            message=message,
-            is_success=True
-        )
-        
-        return JsonResponse({'success': True, 'message': message})
-        
-    except Exception as e:
-        logger.error(f"Error in import_excel_data: {str(e)}", exc_info=True)
-        error_msg = f"Error importing Excel data: {str(e)}"
-        ConnectionLog.objects.create(
-            user=request.user,
-            message=error_msg,
-            is_success=False
-        )
 
-# Only start the background tasks when running the server
-import sys
+        msg = f"Imported {records_added} records from HTML ({records_skipped} skipped as duplicates)"
+        ConnectionLog.objects.create(user=request.user, message=msg, is_success=True)
+        return JsonResponse({'success': True, 'message': msg})
 
-if 'runserver' in sys.argv:
-    logger.info("Starting meter data fetcher...")
-    try:
-        meter_data_fetcher.start()
-        logger.info("Meter data fetcher started")
     except Exception as e:
-        logger.error(f"Failed to start meter data fetcher: {str(e)}")
+        logger.error(f"Error importing HTML data: {str(e)}", exc_info=True)
+        ConnectionLog.objects.create(user=request.user, message=str(e), is_success=False)
+        return JsonResponse({'success': False, 'error': str(e)})
+
+    
+# def import_excel_data(request):
+    
+#     """Import data from Excel file to the DisplayData table"""
+#     if request.method != 'POST':
+#         return JsonResponse({'success': False, 'error': 'Only POST requests allowed'})
+    
+#     try:
+#         # Path to the Excel file
+#         excel_path = r"C:\Users\ADMIN\Documents\Dashboard.xlsx"
+        
+#         # Check if file exists
+#         if not os.path.exists(excel_path):
+#             error_msg = f"Excel file not found at {excel_path}"
+#             ConnectionLog.objects.create(
+#                 user=request.user,
+#                 message=error_msg,
+#                 is_success=False
+#             )
+#             return JsonResponse({'success': False, 'error': error_msg})
+        
+#         # Load data from Excel
+#         try:
+#             df = pd.read_excel(excel_path)
+#         except Exception as e:
+#             error_msg = f"Error reading Excel file: {str(e)}"
+#             ConnectionLog.objects.create(
+#                 user=request.user,
+#                 message=error_msg,
+#                 is_success=False
+#             )
+#             return JsonResponse({'success': False, 'error': error_msg})
+        
+#         # Check for required columns
+#         expected_columns = [
+#             'DATE', 'Washing Machine', 'PROGRAM', 'TIME TO FILL', 'TOTAL TIME', 
+#             'ELEC', 'WATER 1', 'WATER 2', 'GAS', 'CHEMICAL', 'COST PER KW', 
+#             'GAS COST', 'Water cost', 'TOTAL'
+#         ]
+        
+#         for col in expected_columns:
+#             if col not in df.columns:
+#                 error_msg = f"Missing column in Excel: {col}"
+#                 ConnectionLog.objects.create(
+#                     user=request.user,
+#                     message=error_msg,
+#                     is_success=False
+#                 )
+#                 return JsonResponse({'success': False, 'error': error_msg})
+        
+#         # Get existing dates to avoid duplicates
+#         existing_dates = set(DisplayData.objects.values_list('date', flat=True))
+        
+#         # Convert dates to strings for comparison
+#         existing_dates = {str(d) for d in existing_dates}
+        
+#         # Start adding data
+#         records_added = 0
+#         records_skipped = 0
+        
+#         for _, row in df.iterrows():
+#             # Convert date to string for comparison
+#             date_str = str(row['DATE'])
+            
+#             # Skip if this date already exists
+#             if date_str in existing_dates:
+#                 records_skipped += 1
+#                 continue
+            
+#             try:
+#                 # Create a new DisplayData record
+#                 display_data = DisplayData(
+#                     date=date_str,
+#                     washing_machine=row.get('Washing Machine', ''),
+#                     program=row.get('PROGRAM', ''),
+#                     time_to_fill=row.get('TIME TO FILL', None),
+#                     total_time=row.get('TOTAL TIME', None),
+#                     elec=row.get('ELEC', None),
+#                     water_1=row.get('WATER 1', None),
+#                     water_2=row.get('WATER 2', None),
+#                     gas=row.get('GAS', None),
+#                     chemical=row.get('CHEMICAL', None),
+#                     cost_per_kw=row.get('COST PER KW', None),
+#                     gas_cost=row.get('GAS COST', None),
+#                     water_cost=row.get('Water cost', None),
+#                     total=row.get('TOTAL', None)
+#                 )
+#                 display_data.save()
+#                 records_added += 1
+                
+#                 # Add to existing dates to prevent duplicates
+#                 existing_dates.add(date_str)
+                
+#             except Exception as e:
+#                 logger.error(f"Error importing row: {str(e)}", exc_info=True)
+        
+#         # Log the result
+#         message = f"Imported {records_added} records from Excel ({records_skipped} skipped as duplicates)"
+#         ConnectionLog.objects.create(
+#             user=request.user,
+#             message=message,
+#             is_success=True
+#         )
+        
+#         return JsonResponse({'success': True, 'message': message})
+        
+#     except Exception as e:
+#         logger.error(f"Error in import_excel_data: {str(e)}", exc_info=True)
+#         error_msg = f"Error importing Excel data: {str(e)}"
+#         ConnectionLog.objects.create(
+#             user=request.user,
+#             message=error_msg,
+#             is_success=False
+#         )
+
+# # Only start the background tasks when running the server
+# import sys
+
+# if 'runserver' in sys.argv:
+#     logger.info("Starting meter data fetcher...")
+#     try:
+#         meter_data_fetcher.start()
+#         logger.info("Meter data fetcher started")
+#     except Exception as e:
+#         logger.error(f"Failed to start meter data fetcher: {str(e)}")
+    
 
 @login_required
 def meter_data(request):
@@ -1071,26 +1079,6 @@ def utility_costs(request):
     }
     return render(request, 'utility_costs.html', context)
 
-# @login_required
-# def utility_costs(request):
-#     # Get the most recent utility costs if they exist
-#     latest_costs = UtilityCost.objects.last()
-    
-#     if request.method == 'POST':
-#         form = UtilityCostForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'Utility costs saved successfully!')
-#             return redirect('utility_costs')
-#     else:
-#         form = UtilityCostForm(instance=latest_costs)
-    
-#     context = {
-#         'form': form,
-#         'latest_costs': latest_costs,
-#     }
-#     return render(request, 'utility_costs.html', context)
-
 @login_required
 def settings(request):
     """View for the WiFi schedule settings page"""
@@ -1108,3 +1096,49 @@ def settings(request):
     }
     
     return render(request, 'settings.html', context)
+
+# Add these new views for utility costs CRUD operations
+
+@login_required
+def utility_costs(request):
+    utility_costs = UtilityCost.objects.all().order_by('-effective_date')
+    
+    context = {
+        'title': 'Utility Costs',
+        'utility_costs': utility_costs,
+    }
+    return render(request, 'utility_costs.html', context)
+
+@login_required
+def utility_costs_add(request):
+    if request.method == 'POST':
+        form = UtilityCostForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Utility cost added successfully!')
+        else:
+            messages.error(request, 'Error adding utility cost: ' + str(form.errors))
+    
+    return redirect('utility_costs')
+
+@login_required
+def utility_costs_edit(request, id):
+    if request.method == 'POST':
+        instance = get_object_or_404(UtilityCost, id=id)
+        form = UtilityCostForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Utility cost updated successfully!')
+        else:
+            messages.error(request, 'Error updating utility cost: ' + str(form.errors))
+    
+    return redirect('utility_costs')
+
+@login_required
+def utility_costs_delete(request, id):
+    if request.method == 'POST':
+        instance = get_object_or_404(UtilityCost, id=id)
+        instance.delete()
+        messages.success(request, 'Utility cost deleted successfully!')
+    
+    return redirect('utility_costs')

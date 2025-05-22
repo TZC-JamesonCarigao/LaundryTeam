@@ -383,8 +383,9 @@
       const retryButton = document.getElementById('retry-button');
       
       // Server-provided information
-      let isAllowedWifi = {% if is_allowed_wifi %}true{% else %}false{% endif %};
-      const allowedNetworks = {{ allowed_networks|safe|default:"['Converge_2.4GHz_Yj3u']" }};
+      // let isAllowedWifi = {% if is_allowed_wifi %}true{% else %}false{% endif %};
+      let isAllowedWifi = '{% if is_allowed_wifi %}true{% else %}false{% endif %}';
+      const allowedNetworks = JSON.parse(document.getElementById('allowedNetworksData').textContent || ['Converge_2.4GHz_Yj3u']);
       
       // Add event listener to retry button if it exists
       if (retryButton) {
