@@ -47,13 +47,11 @@ urlpatterns = [
     path('api/saved-networks/', api_views.get_saved_networks, name='get_saved_networks'),
     path('api/available-saved-networks/', api_views.get_available_saved_networks, name='get_available_saved_networks'),
     path('api/switch-network/', views.switch_network, name='switch_network'),
-    path('api/import-excel-data/', views.import_excel_data, name='import_excel_data'),
 
     # New meter data views
     path('api/meter-data-ajax/', views.meter_data_ajax, name='meter_data_ajax'),
 
     # New API endpoints
-    path('api/import-excel/', views.import_excel_data, name='import_excel'),
     path('api/clear-meter-data/', views.clear_meter_data, name='clear_meter_data'),
     
     # WiFi Schedule API endpoints

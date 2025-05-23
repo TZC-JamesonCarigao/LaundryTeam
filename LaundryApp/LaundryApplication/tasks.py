@@ -616,13 +616,40 @@ class ScheduleManager:
             
             from selenium import webdriver
             from selenium.webdriver.chrome.service import Service
+            from selenium.webdriver.chrome.options import Options
             from django.db import connection
             import os
             import pandas as pd
             import time
             
-            # Define paths
-            driver_path = '/LaundryTeam/LaundryApp/bin/chromedriver.exe'  # Adjust if needed
+            # Define the correct path to chromedriver.exe
+            driver_path = 'C:\\Users\\ADMIN\\Documents\\LaundryTeam\\LaundryApp\\bin\\chromedriver.exe'
+            
+            # Fallback paths in case the primary location doesn't work
+            fallback_paths = [
+                driver_path,
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bin', 'chromedriver.exe'),
+                '/LaundryApp/bin/chromedriver.exe',
+                'C:/bin/chromedriver.exe',
+                'chromedriver.exe',  # If in PATH
+            ]
+            
+            # Find the first existing driver path
+            for path in fallback_paths:
+                if os.path.exists(path):
+                    driver_path = path
+                    logger.info(f"Using chromedriver at: {path}")
+                    break
+            
+            if not os.path.exists(driver_path):
+                error_msg = f"Chrome driver not found at any location. Primary path tried: {driver_path}"
+                logger.error(error_msg)
+                ConnectionLog.objects.create(
+                    message=error_msg,
+                    is_success=False
+                )
+                return False
+                
             local_html_path = os.path.abspath(
                 'C:/Users/ADMIN/Documents/LaundryTeam/Reporting System.html'
             )
@@ -638,10 +665,17 @@ class ScheduleManager:
             
             html_url = f"file:///{local_html_path.replace(os.sep, '/')}"
             
-            # Start Selenium browser
+            # Start Selenium browser with headless option
             try:
-                service = Service(driver_path)
-                browser = webdriver.Chrome(service=service)
+                chrome_options = Options()
+                chrome_options.add_argument("--headless")  # Run browser in background
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--disable-dev-shm-usage")
+                
+                service = Service(executable_path=driver_path)
+                browser = webdriver.Chrome(service=service, options=chrome_options)
+                
+                logger.info(f"Browser initialized with driver at: {driver_path}")
                 browser.get(html_url)
                 time.sleep(5)  # Let the page fully load
                 
@@ -669,67 +703,72 @@ class ScheduleManager:
             df = tables[0]  # Use first table only
             logger.info(f"Successfully read HTML file. Found {len(df)} rows in table")
             
-            # Validate columns
+            # Check for expected column names from the new HTML format
             expected_columns = [
-                'DATE', 'Washing Machine', 'PROGRAM', 'TIME TO FILL', 'TOTAL TIME', 
-                'ELEC', 'WATER 1', 'WATER 2', 'GAS', 'CHEMICAL', 'COST PER KW', 
-                'GAS COST', 'Water cost', 'TOTAL'
+                'Batch id', 'Time', 'Duration', 'Alarms', 'Machine', 'Classification', 
+                'Triggers', 'Device', 'ABP Cost', 'Dosage Cost', 'Weight', 'Dosings', 'pH', 
+                'Temp.', 'Dis. Temp. Range', 'Customer'
             ]
             
-            for col in expected_columns:
-                if col not in df.columns:
-                    error_msg = f"Missing column in HTML: {col}"
-                    logger.error(error_msg)
-                    ConnectionLog.objects.create(
-                        message=error_msg,
-                        is_success=False
-                    )
-                    return False
+            # Check if important columns exist
+            missing_columns = [col for col in expected_columns if col not in df.columns]
+            if missing_columns:
+                error_msg = f"Missing columns in HTML: {', '.join(missing_columns)}"
+                logger.error(error_msg)
+                ConnectionLog.objects.create(
+                    message=error_msg,
+                    is_success=False
+                )
+                return False
             
-            # Process data and save to database
-            from ..models import DisplayData
+            # Import LaundryData model
+            from .models import LaundryData
             
             # Track counts for logging
             records_added = 0
             records_skipped = 0
             
-            # Get existing dates to avoid duplicates
-            existing_dates = set(DisplayData.objects.values_list('date', flat=True))
-            existing_dates = {str(d) for d in existing_dates}
+            # Get existing batch IDs to avoid duplicates
+            existing_batch_ids = set(LaundryData.objects.values_list('batch_id', flat=True))
             
             # Process each row
             for _, row in df.iterrows():
-                date_str = str(row['DATE'])
+                batch_id = row.get('Batch id')
                 
                 # Skip if already exists
-                if date_str in existing_dates:
+                if batch_id in existing_batch_ids:
                     records_skipped += 1
                     continue
                 
                 try:
-                    # Create new record in database
-                    DisplayData.objects.create(
-                        date=date_str,
-                        washing_machine=row.get('Washing Machine', ''),
-                        program=row.get('PROGRAM', None),
-                        time_to_fill=row.get('TIME TO FILL', None),
-                        total_time=row.get('TOTAL TIME', None),
-                        elec=row.get('ELEC', None),
-                        water_1=row.get('WATER 1', None),
-                        water_2=row.get('WATER 2', None),
-                        gas=row.get('GAS', None),
-                        chemical=row.get('CHEMICAL', None),
-                        cost_per_kw=row.get('COST PER KW', None),
-                        gas_cost=row.get('GAS COST', None),
-                        water_cost=row.get('Water cost', None),
-                        total=row.get('TOTAL', None)
+                    # Parse Time field if it's a datetime string
+                    time_value = row.get('Time')
+                    
+                    # Create new record in database mapping columns to model fields
+                    LaundryData.objects.create(
+                        batch_id=batch_id,
+                        time=time_value,
+                        duration=row.get('Duration'),
+                        alarms=row.get('Alarms'),
+                        machine=row.get('Machine'),
+                        classification=row.get('Classification'),
+                        triggers=row.get('Triggers'),
+                        device=row.get('Device'),
+                        abp_cost=row.get('ABP Cost'),
+                        dosage_cost=row.get('Dosage Cost'),
+                        weight=row.get('Weight'),
+                        dosings=row.get('Dosings'),
+                        ph=row.get('pH'),
+                        temperature=row.get('Temp.'),
+                        temperature_range=row.get('Dis. Temp. Range'),
+                        customer=row.get('Customer')
                     )
                     records_added += 1
-                    existing_dates.add(date_str)
+                    existing_batch_ids.add(batch_id)
                 except Exception as row_error:
-                    logger.error(f"Error adding row: {str(row_error)}")
+                    logger.error(f"Error adding row with batch ID {batch_id}: {str(row_error)}")
             
-            success_message = f"Imported {records_added} records from HTML ({records_skipped} skipped as duplicates)"
+            success_message = f"Imported {records_added} laundry records from HTML ({records_skipped} skipped as duplicates)"
             logger.info(success_message)
             ConnectionLog.objects.create(
                 message=success_message,
