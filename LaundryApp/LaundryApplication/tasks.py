@@ -24,6 +24,7 @@ class MeterDataFetcher:
     """Class to manage fetching meter data from the API"""
     
     def __init__(self):
+        
         self.client_id = 102
         self.api_key = "Rz4ThT0DurbK1"
         self.base_url = "https://tzcapi.azurewebsites.net/publicapi/GetConsumptions"
