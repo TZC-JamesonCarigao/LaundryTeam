@@ -119,13 +119,6 @@ def detect_wifi_robust(allowed_networks=None):
                     is_allowed_wifi = True
                     break
     
-    # Last resort: Hardcoded override for testing environments
-    # Uncomment for testing if needed
-    # if not current_ssid and os.environ.get('DJANGO_ENV') == 'development':
-    #     current_ssid = 'Converge_2.4GHz_Yj3u'
-    #     is_allowed_wifi = True
-    #     logger.warning("Using development mode hardcoded WiFi override")
-    
     return {
         'current_ssid': current_ssid,
         'is_allowed_wifi': is_allowed_wifi,
