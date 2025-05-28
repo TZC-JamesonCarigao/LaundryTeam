@@ -24,7 +24,6 @@ class MeterDataFetcher:
     """Class to manage fetching meter data from the API"""
     
     def __init__(self):
-        
         self.client_id = 102
         self.api_key = "Rz4ThT0DurbK1"
         self.base_url = "https://tzcapi.azurewebsites.net/publicapi/GetConsumptions"
@@ -653,6 +652,9 @@ class ScheduleManager:
                 
             local_html_path = os.path.abspath(
                 'C:/Users/ADMIN/Documents/LaundryTeam/Reporting System.html'
+                # 'http://192.168.22.23/?action=doReport&mainObj=report&from=+" + str(yday) + "%2000:00:00&to=" + str(yday) + "%2023:00:00&gml=g&reportType=br&washExtractorIds=(1,%202,%203,%204)&classificationIds=(1,%202,%204,%205,%206,%208,%209)&chemicalIds=(3,%204,%205,%206,%208,%209)&customerIds=(0)&dosingDeviceIds=(1)#reportTab'
+                # Uncomment this for the site URL
+                
             )
             
             if not os.path.exists(local_html_path):
