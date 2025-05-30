@@ -72,6 +72,9 @@ Configuring the HTML Location for Selenium:
                 
             )
 
+#Change the Converge_2.4GHz_Yj3u into your default wifi name
+const allowedNetworks = JSON.parse(document.getElementById('allowedNetworksData').textContent || ['Converge_2.4GHz_Yj3u']);
+
 
 Commands needed when deploying to another computer:
 
