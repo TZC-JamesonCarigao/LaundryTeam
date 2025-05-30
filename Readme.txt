@@ -121,6 +121,11 @@ Command and steps to run in Raspberry Pi:
     python manage.py migrate
 
     # Start the Django server
-    python manage.py runserver
+    python manage.py runserver 
+    or
+    python manage.py runserver IP address of Raspberry Pi + 8000 sample (192.168.1.1:8000)
 
     http://127.0.0.1:8000/
+
+    #Access using this Address
+    http://192.168.1.1:8000/
